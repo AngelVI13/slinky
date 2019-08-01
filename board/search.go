@@ -87,16 +87,3 @@ func PerformMove(pos *ChessBoard, info *SearchInfo, bestMove int) {
 	}
 }
 
-// IsRepetition Determine if position is a repetition
-func (pos *ChessBoard) IsRepetition() bool {
-	// Loop through moves and check if the current position is equal to the posKey of any previous positions
-	// since when we have a capture or a pawn move i.e. when we reset the 50 move counter, we can not go back
-	// to the same position - we cannot unmove a pawn or uncapture a piece -> limit the search to the last time
-	// the fifty move was reset
-	for i := pos.histPly - pos.fiftyMove; i < pos.histPly-1; i++ {
-		if pos.posKey == pos.history[i].posKey {
-			return true
-		}
-	}
-	return false
-}

@@ -64,12 +64,142 @@ func (pos *ChessBoard) movePiece(from, to int) {
 	pos.Pieces[to] = pce
 }
 
+func (pos *ChessBoard) GetMoves() []int {
+	var moveList MoveList
+	pos.GenerateAllMoves(&moveList)
+
+	legalMoveList := make([]int, 0, len(moveList.Moves))
+
+	var move int
+	for i := 0; i < moveList.Count; i++ {
+		move = moveList.Moves[i]
+		if pos.IsMoveLegal(move) {
+			// todo this might be too slow -> have predefined size
+			legalMoveList = append(legalMoveList, move)
+		}
+	}
+
+	return legalMoveList
+}
+
+func (pos *ChessBoard) IsMoveLegal(move int) bool {
+	// Immitate performing the move and check if king is not
+	// in check after the move -> legal move
+	isLegal := true
+
+	from := FromSq(move)
+	to := ToSq(move)
+
+	// if this is an en passant move
+	if move&MoveFlagEnPass != 0 {
+		// if the side thats making the capture is white
+		// then we need to remove the black pawn right behind the new position of the white piece
+		// i.e. new_pos - 10 -> translated to array index
+		if pos.Side == White {
+			pos.clearPiece(to-10)
+		} else {
+			pos.clearPiece(to+10)
+		}
+	} else if move&MoveFlagCastle != 0 {
+		// if its a castling move, based on the TO square, make the appopriate move, otherwise assert false
+		switch to {
+		case C1:
+			pos.movePiece(A1, D1)
+		case C8:
+			pos.movePiece(A8, D8)
+		case G1:
+			pos.movePiece(H1, F1)
+		case G8:
+			pos.movePiece(H8, F8)
+		default:
+		}
+	}
+
+	// No need to perform any hashing since this is not a real move
+
+	// get what piece, if any, was captured in the move and if somethig was actually captured
+	// i.e. captured piece is not empty remove captured piece and reset fifty move rule
+	captured := Captured(move)
+	if captured != Empty {
+		pos.clearPiece(to)
+	}
+
+	pos.movePiece(from, to)
+
+	// get promoted piece and if its not empty, clear old piece (pawn)
+	// and add new piece (whatever was the selected promotion piece)
+	promotedPiece := Promoted(move)
+	if promotedPiece != Empty {
+		pos.clearPiece(to)
+		pos.addPiece(to, promotedPiece)
+	}
+
+	// if we move the king -> update king square
+	if IsPieceKing[pos.Pieces[to]] {
+		pos.kingSquare[pos.Side] = to
+	}
+
+	side := pos.Side
+	pos.Side ^= 1 // change side to move
+
+	// check if after this move, our king is in check -> if yes -> illegal move
+	if pos.IsSquareAttacked(pos.kingSquare[side], pos.Side) {
+		isLegal = false // Illegal move
+	}
+
+	// Undo move
+	pos.Side ^= 1
+
+	if MoveFlagEnPass&move != 0 {
+		if pos.Side == White {
+			pos.addPiece(to-10, BlackPawn)
+		} else {
+			pos.addPiece(to+10, WhitePawn)
+		}
+	} else if MoveFlagCastle&move != 0 {
+		switch to {
+		case C1:
+			pos.movePiece(D1, A1)
+		case C8:
+			pos.movePiece(D8, A8)
+		case G1:
+			pos.movePiece(F1, H1)
+		case G8:
+			pos.movePiece(F8, H8)
+		default:
+		}
+	}
+
+	pos.movePiece(to, from)
+
+	if IsPieceKing[pos.Pieces[from]] {
+		pos.kingSquare[pos.Side] = from
+	}
+
+	// todo captured is called twice in this method for the same move -> unnecessary
+	if captured != Empty {
+		pos.addPiece(to, captured)
+	}
+
+	// todo promoted is called twice
+	if promotedPiece != Empty {
+		pos.clearPiece(from)
+		if PieceColour[promotedPiece] == White {
+			pos.addPiece(from, WhitePawn)
+		} else {
+			pos.addPiece(from, BlackPawn)
+		}
+	}
+
+	return isLegal
+}
+
 // MakeMove perform a move
 // return false if the side to move has left themselves in check after the move i.e. illegal move
 func (pos *ChessBoard) MakeMove(move int) bool {
 	from := FromSq(move)
 	to := ToSq(move)
-	side := pos.side
+	side := pos.Side
 
 	// Store has value before we do any hashing in/out of pieces etc
 	pos.history[pos.histPly].posKey = pos.posKey
@@ -145,6 +275,7 @@ func (pos *ChessBoard) MakeMove(move int) bool {
 		}
 	}
 
+	pos.PlayerJustMoved ^= 1
 	pos.movePiece(from, to)
 
 	// get promoted piece and if its not empty, clear old piece (pawn)
@@ -156,14 +287,14 @@ func (pos *ChessBoard) MakeMove(move int) bool {
 
 	// if we move the king -> update king square
 	if IsPieceKing[pos.Pieces[to]] {
-		pos.kingSquare[pos.side] = to
+		pos.kingSquare[pos.Side] = to
 	}
 
-	pos.side ^= 1 // change side to move
+	pos.Side ^= 1 // change side to move
 	pos.hashSide() // hash in the new side
 
 	// check if after this move, our king is in check -> if yes -> illegal move
-	if pos.IsSquareAttacked(pos.kingSquare[side], pos.side) {
+	if pos.IsSquareAttacked(pos.kingSquare[side], pos.Side) {
 		pos.TakeMove()
 		return false
 	}
@@ -193,11 +324,12 @@ func (pos *ChessBoard) TakeMove() {
 	}
 	pos.hashCastlePerm()
 
-	pos.side ^= 1
+	pos.PlayerJustMoved ^= 1
+	pos.Side ^= 1
 	pos.hashSide()
 
 	if MoveFlagEnPass&move != 0 {
-		if pos.side == White {
+		if pos.Side == White {
 			pos.addPiece(to-10, BlackPawn)
 		} else {
 			pos.addPiece(to+10, WhitePawn)
@@ -219,7 +351,7 @@ func (pos *ChessBoard) TakeMove() {
 	pos.movePiece(to, from)
 
 	if IsPieceKing[pos.Pieces[from]] {
-		pos.kingSquare[pos.side] = from
+		pos.kingSquare[pos.Side] = from
 	}
 
 	if captured := Captured(move); captured != Empty {

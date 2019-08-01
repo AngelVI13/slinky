@@ -17,7 +17,7 @@ func GeneratePosKey(pos *ChessBoard) (hashKey uint64) {
 		}
 	}
 
-	if pos.side == White {
+	if pos.Side == White {
 		finalKey ^= SideKey
 	}
 

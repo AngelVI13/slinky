@@ -110,7 +110,7 @@ func (pos *ChessBoard) IsSquareOnBoard(sq int) bool {
 }
 
 func (pos *ChessBoard) GenerateCastlingMoves(moveList *MoveList) {
-	if pos.side == White {
+	if pos.Side == White {
 		// if the position allows white king castling
 		// here we do not check if square G1 (final square after castling) is attacked
 		// this will be handled at the end of the function where we will verify that all generated
@@ -157,7 +157,7 @@ func (pos *ChessBoard) GeneratePawnMoves(sq int, moveList *MoveList) {
 	var pawnMoveHandler func(from, to int, ml *MoveList)
 	var pawnCaptureMoveHandler func(from, to, cap int, ml *MoveList)
 
-	if pos.side == White {
+	if pos.Side == White {
 		enemy = Black
 		pawnRank = Rank2
 
@@ -211,7 +211,7 @@ func (pos *ChessBoard) GenerateSlidingMoves(sq, piece int, moveList *MoveList) {
 		for pos.IsSquareOnBoard(targetSq) == true {
 			// BLACK ^ 1 == WHITE       WHITE ^ 1 == BLACK
 			if pos.Pieces[targetSq] != Empty {
-				if PieceColour[pos.Pieces[targetSq]] == pos.side ^ 1 {
+				if PieceColour[pos.Pieces[targetSq]] == pos.Side ^ 1 {
 					pos.addCaptureMove(GetMoveInt(sq, targetSq, pos.Pieces[targetSq], Empty, 0), moveList)
 				}
 
@@ -234,7 +234,7 @@ func (pos *ChessBoard) GenerateNonSlidingMoves(sq, piece int, moveList *MoveList
 		}
 
 		if pos.Pieces[targetSq] != Empty {
-			if PieceColour[pos.Pieces[targetSq]] == pos.side ^ 1 {
+			if PieceColour[pos.Pieces[targetSq]] == pos.Side ^ 1 {
 				pos.addCaptureMove(GetMoveInt(sq, targetSq, pos.Pieces[targetSq], Empty, 0), moveList)
 			}
 			continue
@@ -249,7 +249,7 @@ func (pos *ChessBoard) GenerateAllMoves(moveList *MoveList) {
 	for sq := 0; sq < BoardSquareNum; sq++ {
 		piece := pos.Pieces[sq]
 
-		if piece == OffBoard || PieceColour[piece] != pos.side {
+		if piece == OffBoard || PieceColour[piece] != pos.Side {
 			continue
 		}
 

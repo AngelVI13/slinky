@@ -4,6 +4,7 @@ import (
 	"fmt"
 	inpututils "local/input-utils"
 	stringutils "local/string-utils"
+	board "local/slinky/board"
 	"strconv"
 	"strings"
 	"time"
@@ -13,7 +14,7 @@ import (
 // sample go commange is below
 //            -white time ms -black time  -b/w increment ms -movetime ms
 // go depth 6 wtime 180000 btime 100000 binc 1000 winc 1000 movetime 1000 movestogo 40
-func ParseGo(line string, info *SearchInfo, pos *Board) {
+func ParseGo(line string, info *board.SearchInfo, pos *board.ChessBoard) {
 	depth := -1
 	movesToGo := 30
 	moveTime := -1
@@ -25,26 +26,26 @@ func ParseGo(line string, info *SearchInfo, pos *Board) {
 
 	}
 
-	if strings.Contains(line, "binc") && pos.side == Black {
+	if strings.Contains(line, "binc") && pos.Side == board.Black {
 		incStr1 := stringutils.RemoveStringToTheLeftOfMarker(line, "binc ")
 		incStr2 := stringutils.RemoveStringToTheRightOfMarker(incStr1, " ")
 		inc, _ = strconv.Atoi(incStr2)
 	}
 
-	if strings.Contains(line, "winc") && pos.side == White {
+	if strings.Contains(line, "winc") && pos.Side == board.White {
 		incStr1 := stringutils.RemoveStringToTheLeftOfMarker(line, "winc ")
 		incStr2 := stringutils.RemoveStringToTheRightOfMarker(incStr1, " ")
 		inc, _ = strconv.Atoi(incStr2)
 	}
 
-	if strings.Contains(line, "wtime") && pos.side == White {
+	if strings.Contains(line, "wtime") && pos.Side == board.White {
 		timeStr1 := stringutils.RemoveStringToTheLeftOfMarker(line, "wtime ")
 		timeStr2 := stringutils.RemoveStringToTheRightOfMarker(timeStr1, " ")
 		fmt.Println(timeStr1, "|", timeStr2)
 		timeInt, _ = strconv.Atoi(timeStr2)
 	}
 
-	if strings.Contains(line, "btime") && pos.side == Black {
+	if strings.Contains(line, "btime") && pos.Side == board.Black {
 		timeStr1 := stringutils.RemoveStringToTheLeftOfMarker(line, "btime ")
 		timeStr2 := stringutils.RemoveStringToTheRightOfMarker(timeStr1, " ")
 		timeInt, _ = strconv.Atoi(timeStr2)
@@ -87,27 +88,28 @@ func ParseGo(line string, info *SearchInfo, pos *Board) {
 	}
 
 	if depth == -1 {
-		info.Depth = MaxDepth
+		info.Depth = board.MaxDepth
 	}
 
 	fmt.Printf("time:%d start:%s stop:%d depth:%d timeset:%t\n", timeInt, info.StartTime, info.StopTime,
 		info.Depth, info.TimeSet)
 
-	SearchPosition(pos, info)
+	// todo
+	// SearchPosition(pos, info)
 }
 
 // ParsePosition parse UCI position
 // the expected formats are 'position fen **' or 'position startpos'
-func ParsePosition(lineIn string, pos *Board) {
+func ParsePosition(lineIn string, pos *board.ChessBoard) {
 	if strings.Contains(lineIn, "startpos") {
-		ParseFen(StartFen, pos)
+		pos.ParseFen(board.StartFen)
 	} else {
 		if strings.Contains(lineIn, "fen") {
 			startStr := "fen "
 			fen := stringutils.RemoveStringToTheLeftOfMarker(lineIn, startStr)
-			ParseFen(fen, pos)
+			pos.ParseFen(fen)
 		} else {
-			ParseFen(StartFen, pos)
+			pos.ParseFen(board.StartFen)
 		}
 	}
 
@@ -117,15 +119,14 @@ func ParsePosition(lineIn string, pos *Board) {
 		fullMovesStr := stringutils.RemoveStringToTheLeftOfMarker(lineIn, movesStr)
 		moveSlice := strings.Split(fullMovesStr, " ")
 		for i := range moveSlice {
-			move := ParseMove(moveSlice[i], pos)
-			if move == NoMove {
+			move := pos.ParseMove(moveSlice[i])
+			if move == board.NoMove {
 				break
 			}
-			MakeMove(pos, move)
-			pos.ply = 0
+			pos.MakeMove(move)
 		}
 	}
-	PrintBoard(pos)
+	fmt.Println(pos)
 }
 
 const (
@@ -134,14 +135,12 @@ const (
 )
 
 // UciLoop main UCI loop
-func UciLoop(pos *Board, info *SearchInfo) {
-	fmt.Printf("id name %s\n", Name)
+func UciLoop(pos *board.ChessBoard, info *board.SearchInfo) {
+	fmt.Printf("id name %s\n", board.Name)
 	fmt.Printf("id author AngelVI\n")
 	fmt.Println("uciok")
 
 	line := ""
-
-	InitHashTable(&pos.HashTable)
 
 	for {
 		line, _ = inpututils.GetInput("")
@@ -162,7 +161,7 @@ func UciLoop(pos *Board, info *SearchInfo) {
 			info.Quit = true
 			break
 		} else if strings.Contains(line, "uci") {
-			fmt.Printf("id name %s\n", Name)
+			fmt.Printf("id name %s\n", board.Name)
 			fmt.Printf("id author AngelVI\n")
 			fmt.Println("uciok")
 		}

@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// Name is the name of the chess engine
-	Name = "Hugo 1.0"
+	Name = "Slinky 1.0"
 	// BoardSquareNum is the total number of squares in the board representation
 	BoardSquareNum = 120
 	// BookFile book filename

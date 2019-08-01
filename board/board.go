@@ -18,7 +18,7 @@ type Board interface {
 type ChessBoard struct {
 	Pieces        [BoardSquareNum]int
 	kingSquare    [2]int             // White's & black's king position
-	side          int                // which side's turn it is
+	Side          int                // which side's turn it is
 	enPas         int                // square in which en passant capture is possible
 	fiftyMove     int                // how many moves from the fifty move rule have been made
 	histPly       int                // how many half moves have been made
@@ -26,6 +26,8 @@ type ChessBoard struct {
 	posKey        uint64             // position key is a unique key stored for each position (used to keep track of 3fold repetition)
 	pieceNum      [13]int            // how many pieces of each type are there currently on the board
 	history       [MaxGameMoves]Undo // array that stores current position and variables before a move is made
+
+	PlayerJustMoved int  // At the root pretend the player just moved is Black i.e. White has the first move
 }
 
 // CreateNewBoard returns a new instance of a board with default values
@@ -53,7 +55,7 @@ func (pos *ChessBoard) Reset() {
 	pos.kingSquare[White] = NoSquare
 	pos.kingSquare[Black] = NoSquare
 
-	pos.side = Both
+	pos.Side = Both
 	pos.enPas = NoSquare
 	pos.fiftyMove = 0
 	pos.histPly = 0
@@ -118,9 +120,11 @@ func (pos *ChessBoard) ParseFen(fen string) int {
 	// // AssertTrue(newChar == "w" || newChar == "b")
 
 	if newChar == "w" {
-		pos.side = White
+		pos.Side = White
+		pos.PlayerJustMoved = Black
 	} else {
-		pos.side = Black
+		pos.Side = Black
+		pos.PlayerJustMoved = White
 	}
 
 	// move character pointer 2 characters further and it should now point to the start of the castling permissions part of FEN
@@ -249,7 +253,7 @@ func (pos *ChessBoard) String() string {
 		line += fmt.Sprintf("%3c", 'a'+file)
 	}
 	line += fmt.Sprintf("\n")
-	line += fmt.Sprintf("side:%c\n", SideChar[pos.side])
+	line += fmt.Sprintf("side:%c\n", SideChar[pos.Side])
 	line += fmt.Sprintf("enPas:%d\n", pos.enPas)
 
 	// Compute castling permissions
@@ -332,3 +336,80 @@ func (pos *ChessBoard) ParseMove(moveStr string) (move int) {
 
 	return NoMove
 }
+
+// GetThreeFoldRepetitionCount Detects how many repetitions for a given position
+func (pos *ChessBoard) GetThreeFoldRepetitionCount() int {
+	r := 0
+
+	for i := 0; i < pos.histPly; i++ {
+		if pos.history[i].posKey == pos.posKey {
+			r++
+		}
+	}
+	return r
+}
+
+// IsPositionDraw determine if position is a draw
+func (pos *ChessBoard) IsPositionDraw() bool {
+	// if there are pawns on the board the one of the sides can get mated
+	if pos.pieceNum[WhitePawn] != 0 || pos.pieceNum[BlackPawn] != 0 {
+		return false
+	}
+	// if there are major pieces on the board the one of the sides can get mated
+	if pos.pieceNum[WhiteQueen] != 0 || pos.pieceNum[BlackQueen] != 0 || pos.pieceNum[WhiteRook] != 0 || pos.pieceNum[BlackRook] != 0 {
+		return false
+	}
+	if pos.pieceNum[WhiteBishop] > 1 || pos.pieceNum[BlackBishop] > 1 {
+		return false
+	}
+	if pos.pieceNum[WhiteKnight] > 1 || pos.pieceNum[BlackKnight] > 1 {
+		return false
+	}
+	if pos.pieceNum[WhiteKnight] != 0 && pos.pieceNum[WhiteBishop] != 0 {
+		return false
+	}
+	if pos.pieceNum[BlackKnight] != 0 && pos.pieceNum[BlackBishop] != 0 {
+		return false
+	}
+
+	return true
+}
+
+// GetResult is called everytime a move is made this function is called to check if the game is over
+func (pos *ChessBoard) GetResult(playerJM int) Result {
+
+	if pos.fiftyMove > 100 {
+		fmt.Printf("1/2-1/2 {fifty move rule (claimed by Hugo)}\n")
+		return Draw
+	}
+
+	if pos.GetThreeFoldRepetitionCount() >= 2 {
+		fmt.Printf("1/2-1/2 {3-fold repetition (claimed by Hugo)}\n")
+		return Draw
+	}
+
+	if pos.IsPositionDraw() == true {
+		fmt.Printf("1/2-1/2 {insufficient material (claimed by Hugo)}\n")
+		return Draw
+	}
+
+	if len(pos.GetMoves()) != 0 {
+		return NoWinner
+	}
+
+	InCheck := pos.IsSquareAttacked(pos.kingSquare[pos.Side], pos.Side^1)
+
+	if InCheck == true {
+		if pos.Side == playerJM { // if i am the side in mate -> loss, else win
+			// fmt.Printf("0-1 {black mates (claimed by Hugo)}\n")
+			return Loss
+		}
+		// fmt.Printf("0-1 {white mates (claimed by Hugo)}\n")
+		return Win
+	}
+	// not in check but no legal moves left -> stalemate
+	fmt.Printf("\n1/2-1/2 {stalemate (claimed by Hugo)}\n")
+	return Draw
+
+}
+
