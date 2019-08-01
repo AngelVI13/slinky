@@ -96,9 +96,9 @@ func (pos *ChessBoard) IsMoveLegal(move int) bool {
 		// then we need to remove the black pawn right behind the new position of the white piece
 		// i.e. new_pos - 10 -> translated to array index
 		if pos.Side == White {
-			pos.clearPiece(to-10)
+			pos.clearPiece(to - 10)
 		} else {
-			pos.clearPiece(to+10)
+			pos.clearPiece(to + 10)
 		}
 	} else if move&MoveFlagCastle != 0 {
 		// if its a castling move, based on the TO square, make the appopriate move, otherwise assert false
@@ -196,7 +196,7 @@ func (pos *ChessBoard) IsMoveLegal(move int) bool {
 
 // MakeMove perform a move
 // return false if the side to move has left themselves in check after the move i.e. illegal move
-func (pos *ChessBoard) MakeMove(move int) bool {
+func (pos *ChessBoard) MakeMove(move int) {
 	from := FromSq(move)
 	to := ToSq(move)
 	side := pos.Side
@@ -210,9 +210,9 @@ func (pos *ChessBoard) MakeMove(move int) bool {
 		// then we need to remove the black pawn right behind the new position of the white piece
 		// i.e. new_pos - 10 -> translated to array index
 		if side == White {
-			pos.clearPiece(to-10)
+			pos.clearPiece(to - 10)
 		} else {
-			pos.clearPiece(to+10)
+			pos.clearPiece(to + 10)
 		}
 	} else if move&MoveFlagCastle != 0 {
 		// if its a castling move, based on the TO square, make the appopriate move, otherwise assert false
@@ -290,16 +290,16 @@ func (pos *ChessBoard) MakeMove(move int) bool {
 		pos.kingSquare[pos.Side] = to
 	}
 
-	pos.Side ^= 1 // change side to move
+	pos.Side ^= 1  // change side to move
 	pos.hashSide() // hash in the new side
 
 	// check if after this move, our king is in check -> if yes -> illegal move
 	if pos.IsSquareAttacked(pos.kingSquare[side], pos.Side) {
 		pos.TakeMove()
-		return false
+		// return false
 	}
 
-	return true
+	// return true
 }
 
 // TakeMove revert move, opposite to MakeMove()

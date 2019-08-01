@@ -3,8 +3,9 @@ package utils
 import (
 	"fmt"
 	inpututils "local/input-utils"
-	stringutils "local/string-utils"
 	board "local/slinky/board"
+	uct "local/slinky/uct"
+	stringutils "local/string-utils"
 	"strconv"
 	"strings"
 	"time"
@@ -29,7 +30,7 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 	command := ""
 
 	for {
-		if pos.Side == engineSide && pos.GetResult(pos.PlayerJustMoved) != board.NoWinner {
+		if (pos.Side == engineSide || engineSide == board.Both) && pos.GetResult(pos.PlayerJustMoved) == board.NoWinner {
 			info.StartTime = time.Now()
 			info.Depth = depth
 
@@ -38,7 +39,13 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 				info.StopTime = moveTime
 			}
 
-			board.SearchPosition(pos, info)
+			// board.SearchPosition(pos, info)
+			engineMove := uct.GetEngineMove(pos, 10000)
+			fmt.Println(engineMove)
+			fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
+			pos.MakeMove(engineMove)
+			fmt.Println(pos)
+			fmt.Println(pos.PlayerJustMoved)
 		}
 
 		command, _ = inpututils.GetInput("\nHugo > ")

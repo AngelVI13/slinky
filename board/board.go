@@ -7,31 +7,31 @@ import "strconv"
 type Board interface {
 	MakeMove(move int)
 	TakeMove()
-	GetMoves() []int                  // this should be some other type
-	GetResult(playerJM Player) Result // this should also be some other type
-	GetPlayerJustMoved() Player
-	GetEnemy(playerJM Player) Player
+	GetMoves() []int               // this should be some other type
+	GetResult(playerJM int) Result // this should also be some other type
+	GetPlayerJustMoved() int
+	GetEnemy(playerJM int) int
 	String() string
 }
 
 // ChessBoard structure
 type ChessBoard struct {
-	Pieces        [BoardSquareNum]int
-	kingSquare    [2]int             // White's & black's king position
-	Side          int                // which side's turn it is
-	enPas         int                // square in which en passant capture is possible
-	fiftyMove     int                // how many moves from the fifty move rule have been made
-	histPly       int                // how many half moves have been made
-	castlePerm    int                // castle permissions
-	posKey        uint64             // position key is a unique key stored for each position (used to keep track of 3fold repetition)
-	pieceNum      [13]int            // how many pieces of each type are there currently on the board
-	history       [MaxGameMoves]Undo // array that stores current position and variables before a move is made
+	Pieces     [BoardSquareNum]int
+	kingSquare [2]int             // White's & black's king position
+	Side       int                // which side's turn it is
+	enPas      int                // square in which en passant capture is possible
+	fiftyMove  int                // how many moves from the fifty move rule have been made
+	histPly    int                // how many half moves have been made
+	castlePerm int                // castle permissions
+	posKey     uint64             // position key is a unique key stored for each position (used to keep track of 3fold repetition)
+	pieceNum   [13]int            // how many pieces of each type are there currently on the board
+	history    [MaxGameMoves]Undo // array that stores current position and variables before a move is made
 
-	PlayerJustMoved int  // At the root pretend the player just moved is Black i.e. White has the first move
+	PlayerJustMoved int // At the root pretend the player just moved is Black i.e. White has the first move
 }
 
 func CreateBoard() ChessBoard {
-	return ChessBoard {
+	return ChessBoard{
 		PlayerJustMoved: Black,
 	}
 }
@@ -67,6 +67,14 @@ func (pos *ChessBoard) Reset() {
 	pos.histPly = 0
 	pos.castlePerm = 0
 	pos.posKey = 0
+}
+
+func (pos *ChessBoard) GetEnemy(playerJM int) int {
+	return playerJM ^ 1
+}
+
+func (pos *ChessBoard) GetPlayerJustMoved() int {
+	return pos.PlayerJustMoved
 }
 
 // ParseFen parse fen position string and setup a position accordingly
@@ -385,17 +393,17 @@ func (pos *ChessBoard) IsPositionDraw() bool {
 func (pos *ChessBoard) GetResult(playerJM int) Result {
 
 	if pos.fiftyMove > 100 {
-		fmt.Printf("1/2-1/2 {fifty move rule (claimed by Hugo)}\n")
+		// fmt.Printf("1/2-1/2 {fifty move rule (claimed by Hugo)}\n")
 		return Draw
 	}
 
 	if pos.GetThreeFoldRepetitionCount() >= 2 {
-		fmt.Printf("1/2-1/2 {3-fold repetition (claimed by Hugo)}\n")
+		// fmt.Printf("1/2-1/2 {3-fold repetition (claimed by Hugo)}\n")
 		return Draw
 	}
 
 	if pos.IsPositionDraw() == true {
-		fmt.Printf("1/2-1/2 {insufficient material (claimed by Hugo)}\n")
+		// fmt.Printf("1/2-1/2 {insufficient material (claimed by Hugo)}\n")
 		return Draw
 	}
 
@@ -414,8 +422,7 @@ func (pos *ChessBoard) GetResult(playerJM int) Result {
 		return Win
 	}
 	// not in check but no legal moves left -> stalemate
-	fmt.Printf("\n1/2-1/2 {stalemate (claimed by Hugo)}\n")
+	// fmt.Printf("\n1/2-1/2 {stalemate (claimed by Hugo)}\n")
 	return Draw
 
 }
-
