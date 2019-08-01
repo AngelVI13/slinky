@@ -30,6 +30,12 @@ type ChessBoard struct {
 	PlayerJustMoved int  // At the root pretend the player just moved is Black i.e. White has the first move
 }
 
+func CreateBoard() ChessBoard {
+	return ChessBoard {
+		PlayerJustMoved: Black,
+	}
+}
+
 // CreateNewBoard returns a new instance of a board with default values
 // func CreateNewBoard() TicTacToe {
 // 	return TicTacToe { PlayerJustMoved: PlayerO, resultLines: getResultLines() }

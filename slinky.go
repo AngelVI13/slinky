@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	utils "local/hugo/utils"
+	board "local/slinky/board"
+	utils "local/slinky/utils"
 	inpututils "local/input-utils"
 	"strings"
 )
@@ -27,13 +28,13 @@ const (
 	fen16    string = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1"
 )
 
-func showSqAtBySide(side int, pos *utils.Board) {
+func showSqAtBySide(side int, pos *board.ChessBoard) {
 
-	fmt.Printf("\n\nSquares attacked by:%c\n", utils.SideChar[side])
-	for rank := utils.Rank8; rank >= utils.Rank1; rank-- {
-		for file := utils.FileA; file <= utils.FileH; file++ {
-			sq := utils.FileRankToSquare(file, rank)
-			if utils.IsSquareAttacked(sq, side, pos) {
+	fmt.Printf("\n\nSquares attacked by:%c\n", board.SideChar[side])
+	for rank := board.Rank8; rank >= board.Rank1; rank-- {
+		for file := board.FileA; file <= board.FileH; file++ {
+			sq := board.FileRankToSquare(file, rank)
+			if pos.IsSquareAttacked(sq, side) {
 				fmt.Printf("X")
 			} else {
 				fmt.Printf("-")
@@ -46,10 +47,10 @@ func showSqAtBySide(side int, pos *utils.Board) {
 }
 
 func main() {
-	utils.AllInit()
+	board.AllInit()
 
-	var board utils.Board
-	var info utils.SearchInfo
+	board_ := board.CreateBoard()
+	var info board.SearchInfo
 
 	line := ""
 	fmt.Printf("Welcome to Hugo! Type 'hugo' for console mode...\n")
@@ -61,19 +62,13 @@ func main() {
 		}
 
 		if strings.Contains(line, "uci") {
-			utils.UciLoop(&board, &info)
-			if info.Quit == true {
-				break
-			}
-			continue
-		} else if strings.Contains(line, "xboard") {
-			utils.XBoardLoop(&board, &info)
+			utils.UciLoop(&board_, &info)
 			if info.Quit == true {
 				break
 			}
 			continue
 		} else if strings.Contains(line, "hugo") {
-			utils.ConsoleLoop(&board, &info)
+			utils.ConsoleLoop(&board_, &info)
 			if info.Quit == true {
 				break
 			}

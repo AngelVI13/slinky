@@ -60,6 +60,7 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 			fmt.Printf("time x - set thinking time to x seconds (depth still applies if set)\n")
 			fmt.Printf("view - show current depth and moveTime settings\n")
 			fmt.Printf("showline - show current move line so far\n")
+			fmt.Printf("getmoves - show all moves")
 			fmt.Printf("** note ** - to reset time and depth, set to 0\n")
 			fmt.Printf("enter moves using b7b8q notation\n\n\n")
 			continue
@@ -76,6 +77,16 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 		if strings.Contains(command, "quit") {
 			info.Quit = true
 			break
+		}
+
+		if strings.Contains(command, "getmoves") {
+			moves := pos.GetMoves()
+			fmt.Printf("Moves found: %d -> ", len(moves))
+			for i := 0; i < len(moves); i++ {
+				fmt.Printf("%s, ", board.PrintMove(moves[i]))
+			}
+			fmt.Printf("\n")
+			continue
 		}
 
 		if strings.Compare(command, "post") == 0 {
