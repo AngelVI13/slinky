@@ -1,4 +1,4 @@
-package utils
+package board
 
 import (
 	"bufio"

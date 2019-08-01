@@ -1,94 +1,29 @@
-package utils
+package board
 
 import "math/rand"
 
 // AllInit initialize everything
 func AllInit() {
 	InitSq120To64()
-	InitBitMasks()
 	InitHashKeys()
 	InitFilesRanksBoard()
-	InitEvaluationMasks()
-	InitMvvLva()
 }
 
-// InitEvaluationMasks initialize evaluation masks
-func InitEvaluationMasks() {
-	// set everything to 0
-	for sq := 0; sq < 8; sq++ {
-		FileBBMask[sq] = 0
-		RankBBMask[sq] = 0
+// InitFilesRanksBoard initialize arrays that hold information about which rank & file a square is on the board
+func InitFilesRanksBoard() {
+	// Set all square to OffBoard
+	for index := 0; index < BoardSquareNum; index++ {
+		FilesBoard[index] = OffBoard
+		RanksBoard[index] = OffBoard
 	}
 
-	// For every square, set the corresponding rank/file mask to 1
-	for rank := Rank8; rank >= Rank1; rank-- {
+	for rank := Rank1; rank <= Rank8; rank++ {
 		for file := FileA; file <= FileH; file++ {
-			sq := uint64(rank*8 + file)
-			FileBBMask[file] |= 1 << sq
-			RankBBMask[rank] |= 1 << sq
+			sq := FileRankToSquare(file, rank)
+			FilesBoard[sq] = file
+			RanksBoard[sq] = rank
 		}
 	}
-
-	// set everything to 0
-	for sq := 0; sq < 64; sq++ {
-		IsolatedMask[sq] = 0
-		WhitePassedMask[sq] = 0
-		BlackPassedMask[sq] = 0
-		WhiteDoubledMask[sq] = 0
-	}
-
-	for sq := 0; sq < 64; sq++ {
-		targetSq := sq + 8
-
-		for targetSq < 64 {
-			WhitePassedMask[sq] |= 1 << uint64(targetSq)
-			BlackDoubledMask[sq] |= 1 << uint64(targetSq)
-			targetSq += 8
-		}
-
-		targetSq = sq - 8
-		for targetSq >= 0 {
-			BlackPassedMask[sq] |= 1 << uint64(targetSq)
-			WhiteDoubledMask[sq] |= 1 << uint64(targetSq)
-			targetSq -= 8
-		}
-
-		if FilesBoard[Sq120(sq)] > FileA {
-			IsolatedMask[sq] |= FileBBMask[FilesBoard[Sq120(sq)]-1]
-
-			targetSq = sq + 7
-			for targetSq < 64 {
-				WhitePassedMask[sq] |= 1 << uint64(targetSq)
-				targetSq += 8
-			}
-
-			targetSq = sq - 9
-			for targetSq >= 0 {
-				BlackPassedMask[sq] |= 1 << uint64(targetSq)
-				targetSq -= 8
-			}
-		}
-
-		if FilesBoard[Sq120(sq)] < FileH {
-			IsolatedMask[sq] |= FileBBMask[FilesBoard[Sq120(sq)]+1]
-
-			targetSq = sq + 9
-			for targetSq < 64 {
-				WhitePassedMask[sq] |= 1 << uint64(targetSq)
-				targetSq += 8
-			}
-
-			targetSq = sq - 7
-			for targetSq >= 0 {
-				BlackPassedMask[sq] |= 1 << uint64(targetSq)
-				targetSq -= 8
-			}
-		}
-	}
-
-	// for sq := 0; sq < 64; sq++ {
-	// 	PrintBitBoard(BlackDoubledMask[sq])
-	// }
 }
 
 // InitSq120To64 Initialize board covertion arrays
@@ -112,21 +47,6 @@ func InitSq120To64() {
 			Sq120ToSq64[sq] = sq64
 			sq64++
 		}
-	}
-}
-
-// InitBitMasks initializes bit masks values
-func InitBitMasks() {
-	// !!!!!
-	// consider removing this, the slice will already be initialized to 0
-	for index := 0; index < 64; index++ {
-		SetMask[index] = 0
-		ClearMask[index] = 0
-	}
-
-	for index := 0; index < 64; index++ {
-		SetMask[index] |= (1 << uint64(index))
-		ClearMask[index] = ^SetMask[index] // bitwise complement to SetMask
 	}
 }
 

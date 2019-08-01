@@ -50,7 +50,6 @@ func main() {
 
 	var board utils.Board
 	var info utils.SearchInfo
-	utils.InitHashTable(&board.HashTable)
 
 	line := ""
 	fmt.Printf("Welcome to Hugo! Type 'hugo' for console mode...\n")

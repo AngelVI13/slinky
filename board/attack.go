@@ -1,4 +1,4 @@
-package utils
+package board
 
 // KnightDir Squares increment to find places where the knight will be attacking the current piece
 // For example if we want to check if square 55 (e4) is attacked. We need to check if there is a
@@ -9,12 +9,8 @@ var bishopDir = [4]int{-9, -11, 11, 9}
 var kingDir = [8]int{-1, -10, 1, 10, -9, -11, 11, 9}
 
 // IsSquareAttacked determines if a given square is attacked from the opponent
-func IsSquareAttacked(sq, side int, pos *Board) bool {
+func (pos *ChessBoard) IsSquareAttacked(sq, side int) bool {
 	// side here is the attacking side !!!!!!!!!!!!!!!!!
-
-	// // AssertTrue(SquareOnBoard(sq))
-	// // AssertTrue(SideValid(side))
-	// // AssertTrue(// CheckBoard(pos))
 
 	// pawns
 	// if attacking side is white and there are pawns infornt to the left and right of us, then we are attacked

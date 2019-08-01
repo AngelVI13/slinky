@@ -1,4 +1,4 @@
-package utils
+package board
 
 /*
 MoveGen(board, moveList)
@@ -12,462 +12,254 @@ func GetMoveInt(fromSq, toSq, capturePiece, promotionPiece, flag int) int {
 	return (fromSq | (toSq << 7) | (capturePiece << 14) | (promotionPiece << 20) | flag)
 }
 
-// This already exists from validate.go
-// // IsSquareOffBoard returns true if square is off board
-// func IsSquareOffBoard(sq int) bool {
-// 	return (FilesBoard[sq] == OffBoard)
-// }
-
 // TODO: COMBINE AND PARAMETERIZE THE CODE BELOW for all moves GEN !!!!!!!!!!
 
 // addQuietMove adds quiet move
-func addQuietMove(pos *Board, move int, moveList *MoveList) {
+func (pos *ChessBoard) addQuietMove(move int, moveList *MoveList) {
 	// // AssertTrue(SquareOnBoard(FromSq(move)))
 	// // AssertTrue(SquareOnBoard(ToSq(move)))
-	moveList.Moves[moveList.Count].Move = move
-
-	// Set killer moves scores, the best one hasa a higher score
-	// i.e. the one at index 0
-	if pos.searchKillers[0][pos.ply] == move {
-		moveList.Moves[moveList.Count].score = 900000
-	} else if pos.searchKillers[1][pos.ply] == move {
-		moveList.Moves[moveList.Count].score = 800000
-	} else {
-		moveList.Moves[moveList.Count].score = pos.searchHistory[pos.Pieces[FromSq(move)]][ToSq(move)]
-	}
+	moveList.Moves[moveList.Count] = move
 	moveList.Count++
 }
 
 // addCaptureMove adds capture move
-func addCaptureMove(pos *Board, move int, moveList *MoveList) {
+func (pos *ChessBoard) addCaptureMove(move int, moveList *MoveList) {
 	// // AssertTrue(SquareOnBoard(FromSq(move)))
 	// // AssertTrue(SquareOnBoard(ToSq(move)))
 	// // AssertTrue(PieceValid(Captured(move)))
-	moveList.Moves[moveList.Count].Move = move
-	// the +1000000 makes sure that these moves are searched before killer moves which will have
-	// +800000-900000 which will be searche before history moves which can
-	// go up to 800000
-	moveList.Moves[moveList.Count].score = MvvLvaScores[Captured(move)][pos.Pieces[FromSq(move)]] + 1000000
+	moveList.Moves[moveList.Count] = move
 	moveList.Count++
 }
 
 // addEnPassantMove adds quiet move
-func addEnPassantMove(pos *Board, move int, moveList *MoveList) {
-	moveList.Moves[moveList.Count].Move = move
-	moveList.Moves[moveList.Count].score = 105 + 1000000 // based on MvvLVA -> pawn take pawn results in 105
+func (pos *ChessBoard) addEnPassantMove(move int, moveList *MoveList) {
+	moveList.Moves[moveList.Count] = move
 	moveList.Count++
 }
 
 // addWhitePawnCaptureMove add white pawn capture move
-func addWhitePawnCaptureMove(pos *Board, from, to, cap int, moveList *MoveList) {
+func (pos *ChessBoard) addWhitePawnCaptureMove(from, to, cap int, moveList *MoveList) {
 	// // AssertTrue(PieceValidEmpty(cap))
 	// // AssertTrue(SquareOnBoard(from))
 	// // AssertTrue(SquareOnBoard(to))
 
 	if RanksBoard[from] == Rank7 {
 		// add all promotion with capture related moves
-		addCaptureMove(pos, GetMoveInt(from, to, cap, WhiteQueen, 0), moveList)
-		addCaptureMove(pos, GetMoveInt(from, to, cap, WhiteRook, 0), moveList)
-		addCaptureMove(pos, GetMoveInt(from, to, cap, WhiteBishop, 0), moveList)
-		addCaptureMove(pos, GetMoveInt(from, to, cap, WhiteKnight, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, WhiteQueen, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, WhiteRook, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, WhiteBishop, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, WhiteKnight, 0), moveList)
 	} else {
 		// add normal capture moves without promotion
-		addCaptureMove(pos, GetMoveInt(from, to, cap, Empty, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, Empty, 0), moveList)
 	}
 }
 
 // addWhitePawnMove add white pawn normal moves
-func addWhitePawnMove(pos *Board, from, to int, moveList *MoveList) {
+func (pos *ChessBoard) addWhitePawnMove(from, to int, moveList *MoveList) {
 	// // AssertTrue(SquareOnBoard(from))
 	// // AssertTrue(SquareOnBoard(to))
 
 	if RanksBoard[from] == Rank7 {
 		// add normal promotion without capture
-		addQuietMove(pos, GetMoveInt(from, to, Empty, WhiteQueen, 0), moveList)
-		addQuietMove(pos, GetMoveInt(from, to, Empty, WhiteRook, 0), moveList)
-		addQuietMove(pos, GetMoveInt(from, to, Empty, WhiteBishop, 0), moveList)
-		addQuietMove(pos, GetMoveInt(from, to, Empty, WhiteKnight, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, WhiteQueen, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, WhiteRook, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, WhiteBishop, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, WhiteKnight, 0), moveList)
 	} else {
-		addQuietMove(pos, GetMoveInt(from, to, Empty, Empty, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, Empty, 0), moveList)
 	}
 }
 
 // addBlackPawnCaptureMove add black pawn capture move
-func addBlackPawnCaptureMove(pos *Board, from, to, cap int, moveList *MoveList) {
+func (pos *ChessBoard) addBlackPawnCaptureMove(from, to, cap int, moveList *MoveList) {
 	// // AssertTrue(PieceValidEmpty(cap))
 	// // AssertTrue(SquareOnBoard(from))
 	// // AssertTrue(SquareOnBoard(to))
 
 	if RanksBoard[from] == Rank2 {
 		// add all promotion with capture related moves
-		addCaptureMove(pos, GetMoveInt(from, to, cap, BlackQueen, 0), moveList)
-		addCaptureMove(pos, GetMoveInt(from, to, cap, BlackRook, 0), moveList)
-		addCaptureMove(pos, GetMoveInt(from, to, cap, BlackBishop, 0), moveList)
-		addCaptureMove(pos, GetMoveInt(from, to, cap, BlackKnight, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, BlackQueen, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, BlackRook, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, BlackBishop, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, BlackKnight, 0), moveList)
 	} else {
 		// add normal capture moves without promotion
-		addCaptureMove(pos, GetMoveInt(from, to, cap, Empty, 0), moveList)
+		pos.addCaptureMove(GetMoveInt(from, to, cap, Empty, 0), moveList)
 	}
 }
 
 // addBlackPawnMove add black pawn normal moves
-func addBlackPawnMove(pos *Board, from, to int, moveList *MoveList) {
+func (pos *ChessBoard) addBlackPawnMove(from, to int, moveList *MoveList) {
 	// // AssertTrue(SquareOnBoard(from))
 	// // AssertTrue(SquareOnBoard(to))
 
 	if RanksBoard[from] == Rank2 {
 		// add normal promotion without capture
-		addQuietMove(pos, GetMoveInt(from, to, Empty, BlackQueen, 0), moveList)
-		addQuietMove(pos, GetMoveInt(from, to, Empty, BlackRook, 0), moveList)
-		addQuietMove(pos, GetMoveInt(from, to, Empty, BlackBishop, 0), moveList)
-		addQuietMove(pos, GetMoveInt(from, to, Empty, BlackKnight, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, BlackQueen, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, BlackRook, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, BlackBishop, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, BlackKnight, 0), moveList)
 	} else {
-		addQuietMove(pos, GetMoveInt(from, to, Empty, Empty, 0), moveList)
+		pos.addQuietMove(GetMoveInt(from, to, Empty, Empty, 0), moveList)
 	}
 }
 
-// GenerateAllMoves generates all moves for a position
-func GenerateAllMoves(pos *Board, moveList *MoveList) {
+func (pos *ChessBoard) IsSquareOnBoard(sq int) bool {
+	return FilesBoard[sq] != OffBoard
+}
 
-	// // AssertTrue(// CheckBoard(pos))
-
-	moveList.Count = 0
-
-	side := pos.side
-
-	// TODO: COMBINE AND PARAMETERIZE THE CODE BELOW for PAWN GEN !!!!!!!!!!
-	if side == White {
-		// loop through all of the pawns on the board
-		for pceNum := 0; pceNum < pos.pieceNum[WhitePawn]; pceNum++ {
-			sq := pos.pieceList[WhitePawn][pceNum] // find the square of the pawn
-			// // AssertTrue(SquareOnBoard(sq))          // check if pawn is on the board
-
-			// add simple pawn move forward if next sq is empty
-			if pos.Pieces[sq+10] == Empty {
-				addWhitePawnMove(pos, sq, sq+10, moveList)
-				// if we are on the second rank, generate a double pawn move if 4th rank sq is empty
-				if RanksBoard[sq] == Rank2 && pos.Pieces[sq+20] == Empty {
-					// don't forget to set the flag for PAWN START
-					addQuietMove(pos, GetMoveInt(sq, (sq+20), Empty, Empty, MoveFlagPawnStart), moveList)
-				}
-			}
-
-			// Capture to the left and right
-			// check if the square that we are capturing on is on the board and that it has a black piece on it
-			if SquareOnBoard(sq+9) && PieceColour[pos.Pieces[sq+9]] == Black {
-				addWhitePawnCaptureMove(pos, sq, sq+9, pos.Pieces[sq+9], moveList)
-			}
-			// check if the square that we are capturing on is on the board and that it has a black piece on it
-			if SquareOnBoard(sq+11) && PieceColour[pos.Pieces[sq+11]] == Black {
-				addWhitePawnCaptureMove(pos, sq, sq+11, pos.Pieces[sq+11], moveList)
-			}
-
-			if pos.enPas != NoSquare {
-				// check if the sq+9 square is equal to the enpassant square that we have stored in our pos
-				if sq+9 == pos.enPas {
-					addEnPassantMove(pos, GetMoveInt(sq, sq+9, Empty, Empty, MoveFlagEnPass), moveList)
-				}
-				if sq+11 == pos.enPas {
-					addEnPassantMove(pos, GetMoveInt(sq, sq+11, Empty, Empty, MoveFlagEnPass), moveList)
-				}
-			}
-		}
+func (pos *ChessBoard) GenerateCastlingMoves(moveList *MoveList) {
+	if pos.side == White {
 		// if the position allows white king castling
 		// here we do not check if square G1 (final square after castling) is attacked
 		// this will be handled at the end of the function where we will verify that all generated
 		// moves are legal
 		if (pos.castlePerm & WhiteKingCastling) != 0 {
 			if pos.Pieces[F1] == Empty && pos.Pieces[G1] == Empty {
-				if !IsSquareAttacked(E1, Black, pos) && !IsSquareAttacked(F1, Black, pos) {
-					addQuietMove(pos, GetMoveInt(E1, G1, Empty, Empty, MoveFlagCastle), moveList)
+				if !pos.IsSquareAttacked(E1, Black) && !pos.IsSquareAttacked(F1, Black) {
+					pos.addQuietMove(GetMoveInt(E1, G1, Empty, Empty, MoveFlagCastle), moveList)
 				}
 			}
 		}
 
 		if (pos.castlePerm & WhiteQueenCastling) != 0 {
 			if pos.Pieces[D1] == Empty && pos.Pieces[C1] == Empty && pos.Pieces[B1] == Empty {
-				if !IsSquareAttacked(E1, Black, pos) && !IsSquareAttacked(D1, Black, pos) {
-					addQuietMove(pos, GetMoveInt(E1, C1, Empty, Empty, MoveFlagCastle), moveList)
+				if !pos.IsSquareAttacked(E1, Black) && !pos.IsSquareAttacked(D1, Black) {
+					pos.addQuietMove(GetMoveInt(E1, C1, Empty, Empty, MoveFlagCastle), moveList)
 				}
 			}
 		}
 	} else {
-		for pceNum := 0; pceNum < pos.pieceNum[BlackPawn]; pceNum++ {
-			sq := pos.pieceList[BlackPawn][pceNum]
-			// // AssertTrue(SquareOnBoard(sq))
-
-			// add simple pawn move forward if next sq is empty
-			if pos.Pieces[sq-10] == Empty {
-				addBlackPawnMove(pos, sq, sq-10, moveList)
-				// if we are on the second rank, generate a double pawn move if 4th rank sq is empty
-				if RanksBoard[sq] == Rank7 && pos.Pieces[sq-20] == Empty {
-					// don't forget to set the flag for PAWN START
-					addQuietMove(pos, GetMoveInt(sq, (sq-20), Empty, Empty, MoveFlagPawnStart), moveList)
-				}
-			}
-
-			// Capture to the left and right
-			// check if the square that we are capturing on is on the board and that it has a black piece on it
-			if SquareOnBoard(sq-9) && PieceColour[pos.Pieces[sq-9]] == White {
-				addBlackPawnCaptureMove(pos, sq, sq-9, pos.Pieces[sq-9], moveList)
-			}
-			// check if the square that we are capturing on is on the board and that it has a black piece on it
-			if SquareOnBoard(sq-11) && PieceColour[pos.Pieces[sq-11]] == White {
-				addBlackPawnCaptureMove(pos, sq, sq-11, pos.Pieces[sq-11], moveList)
-			}
-
-			if pos.enPas != NoSquare {
-				// check if the sq-9 square is equal to the enpassant square that we have stored in our pos
-				if sq-9 == pos.enPas {
-					addEnPassantMove(pos, GetMoveInt(sq, sq-9, Empty, Empty, MoveFlagEnPass), moveList)
-				}
-				if sq-11 == pos.enPas {
-					addEnPassantMove(pos, GetMoveInt(sq, sq-11, Empty, Empty, MoveFlagEnPass), moveList)
-				}
-			}
-		}
 		// castling
 		if (pos.castlePerm & BlackKingCastling) != 0 {
 			if pos.Pieces[F8] == Empty && pos.Pieces[G8] == Empty {
-				if !IsSquareAttacked(E8, White, pos) && !IsSquareAttacked(F8, White, pos) {
-					addQuietMove(pos, GetMoveInt(E8, G8, Empty, Empty, MoveFlagCastle), moveList)
+				if !pos.IsSquareAttacked(E8, White) && !pos.IsSquareAttacked(F8, White) {
+					pos.addQuietMove(GetMoveInt(E8, G8, Empty, Empty, MoveFlagCastle), moveList)
 				}
 			}
 		}
 
 		if (pos.castlePerm & BlackQueenCastling) != 0 {
 			if pos.Pieces[D8] == Empty && pos.Pieces[C8] == Empty && pos.Pieces[B8] == Empty {
-				if !IsSquareAttacked(E8, White, pos) && !IsSquareAttacked(D8, White, pos) {
-					addQuietMove(pos, GetMoveInt(E8, C8, Empty, Empty, MoveFlagCastle), moveList)
+				if !pos.IsSquareAttacked(E8, White) && !pos.IsSquareAttacked(D8, White) {
+					pos.addQuietMove(GetMoveInt(E8, C8, Empty, Empty, MoveFlagCastle), moveList)
 				}
 			}
 		}
-	}
-
-	// Loop for slide pieces
-	pieceIndex := LoopSlideIndex[side]
-	piece := LoopSlidePiece[pieceIndex]
-	pieceIndex++
-
-	for piece != 0 {
-		// // AssertTrue(PieceValid(piece))
-
-		for pceNum := 0; pceNum < pos.pieceNum[piece]; pceNum++ {
-			sq := pos.pieceList[piece][pceNum]
-			// // AssertTrue(SquareOnBoard(sq))
-
-			for index := 0; index < NumberOfDir[piece]; index++ {
-				dir := PiececeDir[piece][index]
-				targetSq := sq + dir
-
-				// while we are still on the board, take a sliding piece and add a possible move
-				// untill we see another piece or we hit the edge of the board
-				for SquareOnBoard(targetSq) {
-					// BLACK ^ 1 == WHITE       WHITE ^ 1 == BLACK
-					if pos.Pieces[targetSq] != Empty {
-						if PieceColour[pos.Pieces[targetSq]] == side^1 {
-							addCaptureMove(pos, GetMoveInt(sq, targetSq, pos.Pieces[targetSq], Empty, 0), moveList)
-						}
-						break // if we hit a non-empty square, we break from this direction
-					}
-					addQuietMove(pos, GetMoveInt(sq, targetSq, Empty, Empty, 0), moveList)
-					targetSq += dir
-				}
-			}
-		}
-
-		piece = LoopSlidePiece[pieceIndex]
-		pieceIndex++
-	}
-
-	/* Loop for non slide */
-	pieceIndex = LoopNonSlideIndex[side]
-	piece = LoopNonSlidePiece[pieceIndex]
-	pieceIndex++
-
-	for piece != 0 {
-		// // AssertTrue(PieceValid(piece))
-
-		for pceNum := 0; pceNum < pos.pieceNum[piece]; pceNum++ {
-			sq := pos.pieceList[piece][pceNum]
-			// // AssertTrue(SquareOnBoard(sq))
-
-			for index := 0; index < NumberOfDir[piece]; index++ {
-				dir := PiececeDir[piece][index]
-				targetSq := sq + dir
-
-				if !SquareOnBoard(targetSq) {
-					continue
-				}
-
-				// BLACK ^ 1 == WHITE       WHITE ^ 1 == BLACK
-				if pos.Pieces[targetSq] != Empty {
-					if PieceColour[pos.Pieces[targetSq]] == side^1 {
-						addCaptureMove(pos, GetMoveInt(sq, targetSq, pos.Pieces[targetSq], Empty, 0), moveList)
-					}
-					continue
-				}
-				addQuietMove(pos, GetMoveInt(sq, targetSq, Empty, Empty, 0), moveList)
-			}
-		}
-
-		piece = LoopNonSlidePiece[pieceIndex]
-		pieceIndex++
 	}
 }
 
-// GenerateAllCaptures generates all moves for a position
-func GenerateAllCaptures(pos *Board, moveList *MoveList) {
-	// // AssertTrue(// CheckBoard(pos))
+func (pos *ChessBoard) GeneratePawnMoves(sq int, moveList *MoveList) {
+	var forwardOneSq, forwardTwoSq, captureLeftSq, captureRightSq int
+	var enemy int
+	var pawnRank int
+	var pawnMoveHandler func(from, to int, ml *MoveList)
+	var pawnCaptureMoveHandler func(from, to, cap int, ml *MoveList)
 
-	moveList.Count = 0
+	if pos.side == White {
+		enemy = Black
+		pawnRank = Rank2
 
-	side := pos.side
-
-	// TODO: COMBINE AND PARAMETERIZE THE CODE BELOW for PAWN GEN !!!!!!!!!!
-	if side == White {
-		// loop through all of the pawns on the board
-		for pceNum := 0; pceNum < pos.pieceNum[WhitePawn]; pceNum++ {
-			sq := pos.pieceList[WhitePawn][pceNum] // find the square of the pawn
-			// // AssertTrue(SquareOnBoard(sq))          // check if pawn is on the board
-
-			// Capture to the left and right
-			// check if the square that we are capturing on is on the board and that it has a black piece on it
-			if SquareOnBoard(sq+9) && PieceColour[pos.Pieces[sq+9]] == Black {
-				addWhitePawnCaptureMove(pos, sq, sq+9, pos.Pieces[sq+9], moveList)
-			}
-			// check if the square that we are capturing on is on the board and that it has a black piece on it
-			if SquareOnBoard(sq+11) && PieceColour[pos.Pieces[sq+11]] == Black {
-				addWhitePawnCaptureMove(pos, sq, sq+11, pos.Pieces[sq+11], moveList)
-			}
-
-			if pos.enPas != NoSquare {
-				// check if the sq+9 square is equal to the enpassant square that we have stored in our pos
-				if sq+9 == pos.enPas {
-					addEnPassantMove(pos, GetMoveInt(sq, sq+9, Empty, Empty, MoveFlagEnPass), moveList)
-				}
-				if sq+11 == pos.enPas {
-					addEnPassantMove(pos, GetMoveInt(sq, sq+11, Empty, Empty, MoveFlagEnPass), moveList)
-				}
-			}
-		}
+		forwardOneSq, forwardTwoSq, captureLeftSq, captureRightSq = 10, 20, 9, 11
+        pawnMoveHandler, pawnCaptureMoveHandler = pos.addWhitePawnMove, pos.addWhitePawnCaptureMove
 	} else {
-		for pceNum := 0; pceNum < pos.pieceNum[BlackPawn]; pceNum++ {
-			sq := pos.pieceList[BlackPawn][pceNum]
-			// // AssertTrue(SquareOnBoard(sq))
+		enemy = White
+		pawnRank = Rank7
+		forwardOneSq, forwardTwoSq, captureLeftSq, captureRightSq = -10, -20, -9, -11
+		pawnMoveHandler, pawnCaptureMoveHandler = pos.addBlackPawnMove, pos.addBlackPawnCaptureMove
+	}
 
-			// Capture to the left and right
-			// check if the square that we are capturing on is on the board and that it has a black piece on it
-			if SquareOnBoard(sq-9) && PieceColour[pos.Pieces[sq-9]] == White {
-				addBlackPawnCaptureMove(pos, sq, sq-9, pos.Pieces[sq-9], moveList)
-			}
-			// check if the square that we are capturing on is on the board and that it has a black piece on it
-			if SquareOnBoard(sq-11) && PieceColour[pos.Pieces[sq-11]] == White {
-				addBlackPawnCaptureMove(pos, sq, sq-11, pos.Pieces[sq-11], moveList)
-			}
-
-			if pos.enPas != NoSquare {
-				// check if the sq-9 square is equal to the enpassant square that we have stored in our pos
-				if sq-9 == pos.enPas {
-					addEnPassantMove(pos, GetMoveInt(sq, sq-9, Empty, Empty, MoveFlagEnPass), moveList)
-				}
-				if sq-11 == pos.enPas {
-					addEnPassantMove(pos, GetMoveInt(sq, sq-11, Empty, Empty, MoveFlagEnPass), moveList)
-				}
-			}
+	// add simple pawn move forward if next sq is empty
+	if pos.Pieces[sq + forwardOneSq] == Empty {
+		pawnMoveHandler(sq, sq + forwardOneSq, moveList)
+		// if we are on the second rank, generate a double pawn move if 4th rank sq is empty
+		if RanksBoard[sq] == pawnRank && pos.Pieces[sq + forwardTwoSq] == Empty {
+			// don't forget to set the flag for PAWN START
+			pos.addQuietMove(GetMoveInt(sq, (sq + forwardTwoSq), Empty, Empty, MoveFlagPawnStart), moveList)
 		}
 	}
 
-	// Loop for slide pieces
-	pieceIndex := LoopSlideIndex[side]
-	piece := LoopSlidePiece[pieceIndex]
-	pieceIndex++
-
-	for piece != 0 {
-		// // AssertTrue(PieceValid(piece))
-
-		for pceNum := 0; pceNum < pos.pieceNum[piece]; pceNum++ {
-			sq := pos.pieceList[piece][pceNum]
-			// // AssertTrue(SquareOnBoard(sq))
-
-			for index := 0; index < NumberOfDir[piece]; index++ {
-				dir := PiececeDir[piece][index]
-				targetSq := sq + dir
-
-				// while we are still on the board, take a sliding piece and add a possible move
-				// untill we see another piece or we hit the edge of the board
-				for SquareOnBoard(targetSq) {
-					// BLACK ^ 1 == WHITE       WHITE ^ 1 == BLACK
-					if pos.Pieces[targetSq] != Empty {
-						if PieceColour[pos.Pieces[targetSq]] == side^1 {
-							addCaptureMove(pos, GetMoveInt(sq, targetSq, pos.Pieces[targetSq], Empty, 0), moveList)
-						}
-						break // if we hit a non-empty square, we break from this direction
-					}
-					targetSq += dir
-				}
-			}
-		}
-
-		piece = LoopSlidePiece[pieceIndex]
-		pieceIndex++
+	// Capture to the left and right
+	// check if the square that we are capturing on is on the board and that it has a black piece on it
+	if pos.IsSquareOnBoard(sq + captureLeftSq) && PieceColour[pos.Pieces[sq + captureLeftSq]] == enemy {
+		pawnCaptureMoveHandler(sq, sq + captureLeftSq, pos.Pieces[sq + captureLeftSq], moveList)
 	}
 
-	/* Loop for non slide */
-	pieceIndex = LoopNonSlideIndex[side]
-	piece = LoopNonSlidePiece[pieceIndex]
-	pieceIndex++
+	// check if the square that we are capturing on is on the board and that it has a black piece on it
+	if pos.IsSquareOnBoard(sq + captureRightSq) && PieceColour[pos.Pieces[sq + captureRightSq]] == enemy {
+		pawnCaptureMoveHandler(sq, sq + captureRightSq, pos.Pieces[sq + captureRightSq], moveList)
+	}
 
-	for piece != 0 {
-		// // AssertTrue(PieceValid(piece))
-
-		for pceNum := 0; pceNum < pos.pieceNum[piece]; pceNum++ {
-			sq := pos.pieceList[piece][pceNum]
-			// // AssertTrue(SquareOnBoard(sq))
-
-			for index := 0; index < NumberOfDir[piece]; index++ {
-				dir := PiececeDir[piece][index]
-				targetSq := sq + dir
-
-				if !SquareOnBoard(targetSq) {
-					continue
-				}
-
-				// BLACK ^ 1 == WHITE       WHITE ^ 1 == BLACK
-				if pos.Pieces[targetSq] != Empty {
-					if PieceColour[pos.Pieces[targetSq]] == side^1 {
-						addCaptureMove(pos, GetMoveInt(sq, targetSq, pos.Pieces[targetSq], Empty, 0), moveList)
-					}
-					continue
-				}
-			}
+	if pos.enPas != NoSquare {
+		// check if the sq+9 square is equal to the enpassant square that we have stored in our pos
+		if sq + captureLeftSq == pos.enPas {
+			pos.addEnPassantMove(GetMoveInt(sq, sq + captureLeftSq, Empty, Empty, MoveFlagEnPass), moveList)
 		}
 
-		piece = LoopNonSlidePiece[pieceIndex]
-		pieceIndex++
+		if sq + captureRightSq == pos.enPas {
+			pos.addEnPassantMove(GetMoveInt(sq, sq + captureRightSq, Empty, Empty, MoveFlagEnPass), moveList)
+		}
 	}
 }
 
-// MoveExists returns true if a move is legal i.e. exists
-func MoveExists(pos *Board, move int) bool {
-	var moveList MoveList
+func (pos *ChessBoard) GenerateSlidingMoves(sq, piece int, moveList *MoveList) {
+	for i := 0; i< NumberOfDir[piece]; i++ {
+		dir := PiececeDir[piece][i]
+		targetSq := sq + dir
 
-	GenerateAllMoves(pos, &moveList) // generate all moves for the position
+		for pos.IsSquareOnBoard(targetSq) == true {
+			// BLACK ^ 1 == WHITE       WHITE ^ 1 == BLACK
+			if pos.Pieces[targetSq] != Empty {
+				if PieceColour[pos.Pieces[targetSq]] == pos.side ^ 1 {
+					pos.addCaptureMove(GetMoveInt(sq, targetSq, pos.Pieces[targetSq], Empty, 0), moveList)
+				}
 
-	// loop through all moves
-	for moveNum := 0; moveNum < moveList.Count; moveNum++ {
-		if !MakeMove(pos, moveList.Moves[moveNum].Move) {
+				break  // if we hit a non-empty square, we break from this direction
+			}
+
+			pos.addQuietMove(GetMoveInt(sq, targetSq, Empty, Empty, 0), moveList)
+			targetSq += dir
+		}
+	}
+}
+
+func (pos *ChessBoard) GenerateNonSlidingMoves(sq, piece int, moveList *MoveList) {
+	for i := 0; i< NumberOfDir[piece]; i++ {
+		dir := PiececeDir[piece][i]
+		targetSq := sq + dir
+
+		if pos.IsSquareOnBoard(targetSq) == false {
 			continue
 		}
 
-		// take back the made move from the 'if' above and if that move is legal and is equal to the move
-		// we passed in -> move exists -> return true
-		TakeMove(pos)
+		if pos.Pieces[targetSq] != Empty {
+			if PieceColour[pos.Pieces[targetSq]] == pos.side ^ 1 {
+				pos.addCaptureMove(GetMoveInt(sq, targetSq, pos.Pieces[targetSq], Empty, 0), moveList)
+			}
+			continue
+		}
+		pos.addQuietMove(GetMoveInt(sq, targetSq, Empty, Empty, 0), moveList)
+	}
+}
 
-		if moveList.Moves[moveNum].Move == move {
-			return true
+func (pos *ChessBoard) GenerateAllMoves(moveList *MoveList) {
+	pos.GenerateCastlingMoves(moveList)
+
+	for sq := 0; sq < BoardSquareNum; sq++ {
+		piece := pos.Pieces[sq]
+
+		if piece == OffBoard || PieceColour[piece] != pos.side {
+			continue
+		}
+
+		switch piece {
+		case WhitePawn, BlackPawn:
+			pos.GeneratePawnMoves(sq, moveList)
+		case WhiteKnight, BlackKnight, WhiteKing, BlackKing:
+			pos.GenerateNonSlidingMoves(sq, piece, moveList)
+		case WhiteRook, BlackRook, WhiteBishop, BlackBishop, WhiteQueen, BlackQueen:
+			pos.GenerateSlidingMoves(sq, piece, moveList)
 		}
 	}
-
-	return false
 }

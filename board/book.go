@@ -1,21 +1,48 @@
-package utils
+package board
 
 import (
+	"bufio"
+	"log"
+	"os"
 	"fmt"
-	ioutils "local/io-utils"
 	"local/string-utils"
 	"math/rand"
 	"strings"
 	"time"
 )
 
+// ScanFile reads file and returns []slice with all lines
+func ScanFile(filename string) ([]string, error) {
+	lines := make([]string, 0)
+
+	f, err := os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		log.Printf("open file error: %v", err)
+		return lines, err
+	}
+	defer f.Close()
+
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		line := sc.Text()
+		lines = append(lines, line)
+	}
+	if err := sc.Err(); err != nil {
+		log.Fatalf("scan file error: %v", err)
+		return nil, err
+	}
+
+	return lines, nil
+}
+
+
 // GetBookMove returns a move from the opening book
-func GetBookMove(pos *Board) int {
+func GetBookMove(pos *ChessBoard) int {
 	if pos.histPly > 25 {
 		return 0
 	}
 
-	book, err := ioutils.ScanFile(BookFile)
+	book, err := ScanFile(BookFile)
 	if err != nil {
 		fmt.Println("Book error")
 		return 0
@@ -38,7 +65,7 @@ func GetBookMove(pos *Board) int {
 				fmt.Println("Book move parsing error")
 				continue // parsing eror
 			} else {
-				bookMoves = append(bookMoves, ParseMove(nextMoveStr, pos))
+				bookMoves = append(bookMoves, pos.ParseMove(nextMoveStr))
 			}
 		}
 	}

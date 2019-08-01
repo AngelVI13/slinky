@@ -1,4 +1,4 @@
-package utils
+package board
 
 import (
 	"fmt"
@@ -8,51 +8,48 @@ import (
 // LeafNodes global leaf nodes counter
 var LeafNodes int64
 
-func perft(depth int, pos *Board) {
-
-	// // AssertTrue(// CheckBoard(pos))
-
+func perft(depth int, pos *ChessBoard) {
 	if depth == 0 {
 		LeafNodes++
 		return
 	}
 
 	var moveList MoveList
-	GenerateAllMoves(pos, &moveList)
+	pos.GenerateAllMoves(&moveList)
 
 	for moveNum := 0; moveNum < moveList.Count; moveNum++ {
-		if !MakeMove(pos, moveList.Moves[moveNum].Move) {
+		if !pos.MakeMove(moveList.Moves[moveNum]) {
 			continue
 		}
 		perft(depth-1, pos)
-		TakeMove(pos)
+		pos.TakeMove()
 	}
 
 	return
 }
 
 // PerftTest run perft test
-func PerftTest(depth int, pos *Board) {
+func PerftTest(depth int, pos *ChessBoard) {
 
 	// // AssertTrue(// CheckBoard(pos))
 
-	PrintBoard(pos)
+	fmt.Println(pos)
 	fmt.Printf("\nStarting Test To Depth:%d\n", depth)
 	LeafNodes = 0
 
 	start := time.Now()
 
 	var moveList MoveList
-	GenerateAllMoves(pos, &moveList)
+	pos.GenerateAllMoves(&moveList)
 
 	for moveNum := 0; moveNum < moveList.Count; moveNum++ {
-		move := moveList.Moves[moveNum].Move
-		if !MakeMove(pos, move) {
+		move := moveList.Moves[moveNum]
+		if !pos.MakeMove(move) {
 			continue
 		}
 		cumulativeNodes := LeafNodes
 		perft(depth-1, pos)
-		TakeMove(pos)
+		pos.TakeMove()
 		oldNodes := LeafNodes - cumulativeNodes
 		fmt.Printf("move %d : %s : %d\n", moveNum+1, PrintMove(move), oldNodes)
 	}

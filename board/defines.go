@@ -1,4 +1,4 @@
-package utils
+package board
 
 import "time"
 
@@ -63,11 +63,26 @@ const (
 	Both
 )
 
+// Player type to indicate a player -> White, Black, NoPlayer
+type Player int8
 // Defines for MC simulation
 const (
-	PlayerWhite = 1
-	PlayerBlack = -1
-	NoPlayer    = 0
+	PlayerWhite Player = 1
+	PlayerBlack Player = -1
+	NoPlayer    Player = 0
+)
+
+// Result type indicates a predefined game result value used for MCTS (UCT) algorithm
+type Result float64
+const (
+	// NoWinner value to indicate no winner
+	NoWinner Result = -1.0
+	// Loss value to indicate a loss for the playerJustMoved
+	Loss Result = 0.0
+	// Draw value to indicate a drawn game
+	Draw Result = 0.5
+	// Win value to indicate a win for the playerJustMoved
+	Win Result = 1.0
 )
 
 // Defines for board square indexes
@@ -174,34 +189,6 @@ type Undo struct {
 	posKey     uint64
 }
 
-// Board structure
-type Board struct {
-	Pieces        [BoardSquareNum]int
-	Pawns         [3]uint64          // number of white pawns, number of black pawns, number of both pawns
-	kingSquare    [2]int             // White's & black's king position
-	side          int                // which side's turn it is
-	enPas         int                // square in which en passant capture is possible
-	fiftyMove     int                // how many moves from the fifty move rule have been made
-	ply           int                // depth of search algorithm
-	histPly       int                // how many half moves have been made
-	castlePerm    int                // castle permissions
-	posKey        uint64             // position key is a unique key stored for each position (used to keep track of 3fold repetition)
-	pieceNum      [13]int            // how many pieces of each type are there currently on the board
-	bigPieceNum   [2]int             // number of big pieces on the board (anything thats not a pawn) for each colour and for both
-	majorPieceNum [2]int             // number of major pieces on the board (rooks and queens) for each colour and for both
-	minorPieceNum [2]int             // number of minor pieces on the board (bishops and knights) for each colour and for both
-	material      [2]int             // material scores for black and white
-	history       [MaxGameMoves]Undo // array that stores current position and variables before a move is made
-	// pieceList contains the squares of all pieces on the board, this makes it faster to iterate and generate moves for (instead of iterating over pieces slice (too big))
-	// 13 is the total number of pieces for white and black combined, 10 is the maximum possible number of each piece to occur in a game
-	pieceList [13][10]int
-	HashTable HashTable // principle variation table
-	PvArray   [MaxDepth]int
-
-	searchHistory [13][BoardSquareNum]int // everytime a search improves alpha, for that piece type and to square, we will improve the score
-	searchKillers [2][MaxDepth]int        // stores 2 moves that have recently stored a beta cutoff (not considers captures)
-}
-
 // Sq120ToSq64 would return the index of 120 mapped to a 64 square board
 var Sq120ToSq64 [BoardSquareNum]int
 
@@ -223,24 +210,6 @@ func Sq64(sq120 int) int {
 // Sq120 returns the element at sq64 base
 func Sq120(sq64 int) int {
 	return Sq64ToSq120[sq64]
-}
-
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-// SetMask is used when setting a bit to 1 or 0
-var SetMask [64]uint64
-
-// ClearMask is used to clear a bit
-var ClearMask [64]uint64
-
-// ClearBit takes a bitboard and clears the bit at a provided square
-func ClearBit(bb *uint64, sq int) {
-	*bb &= ClearMask[sq]
-}
-
-// SetBit sets the bit at square to true given a bit board
-func SetBit(bb *uint64, sq int) {
-	*bb |= SetMask[sq]
 }
 
 // PieceKeys hashkeys for each piece for each possible position for the key
@@ -307,12 +276,6 @@ var FilesBoard [BoardSquareNum]int
 // RanksBoard an array that returns which file a particular square is on
 var RanksBoard [BoardSquareNum]int
 
-// Move type
-type Move struct {
-	Move  int
-	score int
-}
-
 /* Game move - information stored in the move int from type Move
    | |-P|-|||Ca-||---To--||-From-|
 0000 0000 0000 0000 0000 0111 1111 -> From - 0x7F
@@ -364,7 +327,7 @@ const (
 
 // MoveList a structure to hold all generated moves
 type MoveList struct {
-	Moves [MaxPositionMoves]Move
+	Moves [MaxPositionMoves]int
 	Count int // number of moves on the moves list
 }
 
@@ -374,37 +337,6 @@ var Debug = true
 const (
 	// NoMove signifies no move
 	NoMove int = 0
-)
-
-// HashEntry principle variation entry
-type HashEntry struct {
-	posKey uint64
-	move   int
-	score  int
-	depth  int
-	flags  int
-}
-
-// HashTable principle variation table
-type HashTable struct {
-	pTable     []HashEntry // you can make an array instead but this allows for dynamically allocating space as you go along
-	numEntries int
-	newWrite   int
-	overWrite  int
-	hit        int
-	cut        int
-}
-
-// Hash entry flags
-const (
-	// HFNone hfnone
-	HFNone = iota
-	// HFAlpha hf alpha
-	HFAlpha
-	// HFBeta hf beta
-	HFBeta
-	// HFExact hf exact
-	HFExact
 )
 
 const (
@@ -427,10 +359,6 @@ type SearchInfo struct {
 	Quit    bool // if interrupt is sent -> quit
 	stopped bool
 
-	failHigh      float32 // these will be used to look at move ordering
-	failHighFirst float32
-	nullCut       int // null move cutoff
-
 	GameMode     int  // see consts below
 	PostThinking bool // if true, engine posts its thinking to the gui
 }
@@ -445,27 +373,6 @@ const (
 	ConsoleMode
 )
 
-// FileBBMask evaluation masks that help identify passed pawns, open files etc
-var FileBBMask [8]uint64
-
-// RankBBMask evaluation masks that help identify passed pawns, open ranks etc
-var RankBBMask [8]uint64
-
-// BlackPassedMask black passed pawn mask
-var BlackPassedMask [64]uint64
-
-// WhitePassedMask white passed pawn mask
-var WhitePassedMask [64]uint64
-
-// IsolatedMask isolated pawn mask
-var IsolatedMask [64]uint64
-
-// WhiteDoubledMask isolated pawn mask
-var WhiteDoubledMask [64]uint64
-
-// BlackDoubledMask isolated pawn mask
-var BlackDoubledMask [64]uint64
-
 // PieceChar string with piece characters
 var PieceChar = ".PNBRQKpnbrqk"
 
@@ -477,57 +384,6 @@ var RankChar = "12345678"
 
 // FileChar string with file characters
 var FileChar = "abcdefgh"
-
-// PieceBig A map used to identify if a piece is considered "Big"
-var PieceBig = map[int]bool{
-	Empty:       false,
-	WhitePawn:   false,
-	WhiteKnight: true,
-	WhiteBishop: true,
-	WhiteRook:   true,
-	WhiteQueen:  true,
-	WhiteKing:   true,
-	BlackPawn:   false,
-	BlackKnight: true,
-	BlackBishop: true,
-	BlackRook:   true,
-	BlackQueen:  true,
-	BlackKing:   true,
-}
-
-// PieceMaj A map used to identify if a piece is considered "Major"
-var PieceMaj = map[int]bool{
-	Empty:       false,
-	WhitePawn:   false,
-	WhiteKnight: false,
-	WhiteBishop: false,
-	WhiteRook:   true,
-	WhiteQueen:  true,
-	WhiteKing:   true,
-	BlackPawn:   false,
-	BlackKnight: false,
-	BlackBishop: false,
-	BlackRook:   true,
-	BlackQueen:  true,
-	BlackKing:   true,
-}
-
-// PieceMin A map used to identify if a piece is considered "Minor"
-var PieceMin = map[int]bool{
-	Empty:       false,
-	WhitePawn:   false,
-	WhiteKnight: true,
-	WhiteBishop: true,
-	WhiteRook:   false,
-	WhiteQueen:  false,
-	WhiteKing:   false,
-	BlackPawn:   false,
-	BlackKnight: true,
-	BlackBishop: true,
-	BlackRook:   false,
-	BlackQueen:  false,
-	BlackKing:   false,
-}
 
 // PieceColour A map used to identify a piece's colour
 var PieceColour = map[int]int{

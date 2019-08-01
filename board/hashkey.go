@@ -1,7 +1,7 @@
-package utils
+package board
 
 // GeneratePosKey takes a position and calculates a unique hashkey for it
-func GeneratePosKey(pos *Board) (hashKey uint64) {
+func GeneratePosKey(pos *ChessBoard) (hashKey uint64) {
 	var finalKey uint64
 	piece := Empty
 

@@ -1,19 +1,19 @@
-package utils
+package board
 
 // --- Hashing 'macros' ---
-func hashPiece(piece, sq int, pos *Board) {
+func (pos *ChessBoard) hashPiece(piece, sq int) {
 	pos.posKey ^= PieceKeys[piece][sq]
 }
 
-func hashCastlePerm(pos *Board) {
+func (pos *ChessBoard) hashCastlePerm() {
 	pos.posKey ^= CastleKeys[pos.castlePerm]
 }
 
-func hashSide(pos *Board) {
+func (pos *ChessBoard) hashSide() {
 	pos.posKey ^= SideKey
 }
 
-func hashEnPass(pos *Board) {
+func (pos *ChessBoard) hashEnPass() {
 	pos.posKey ^= PieceKeys[Empty][pos.enPas]
 }
 
@@ -40,150 +40,36 @@ var CastlePerm = [BoardSquareNum]int{
 	15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
 }
 
-func clearPiece(sq int, pos *Board) {
-
-	// // AssertTrue(SquareOnBoard(sq))
-
+func (pos *ChessBoard) clearPiece(sq int) {
 	pce := pos.Pieces[sq]
-
-	// // AssertTrue(PieceValid(pce))
-
-	colour := PieceColour[pce]
-	tempPieceNum := -1
-
-	hashPiece(pce, sq, pos)
-
+	pos.hashPiece(pce, sq)
 	pos.Pieces[sq] = Empty
-	pos.material[colour] -= PieceVal[pce]
-
-	// Decrement number of pieces from respective arrays
-	if PieceBig[pce] {
-		pos.bigPieceNum[colour]--
-		if PieceMaj[pce] {
-			pos.majorPieceNum[colour]--
-		} else {
-			pos.minorPieceNum[colour]--
-		}
-	} else {
-		// if piece is a pawn, remove it from the board of same coloured pawns and also from board of both coloured pawns
-		ClearBit(&pos.Pawns[colour], Sq64(sq))
-		ClearBit(&pos.Pawns[Both], Sq64(sq))
-	}
-
-	/*
-		pos.pceNum[wP] == 5 Looping from 0 to 4
-		pos.pList[pce][0] == sq0
-		pos.pList[pce][1] == sq1
-		pos.pList[pce][2] == sq2
-		pos.pList[pce][3] == sq3
-		pos.pList[pce][4] == sq4
-
-		sq==sq3 so t_pceNum = 3;
-	*/
-
-	// Loop over all available WhitePawns for example, and on of the white pawns
-	// sould have the same square number as the one passed to the function to be cleared
-	// find that one
-	for index := 0; index < pos.pieceNum[pce]; index++ {
-		if pos.pieceList[pce][index] == sq {
-			tempPieceNum = index
-			break
-		}
-	}
-
-	// // AssertTrue(tempPieceNum != -1)
-
 	pos.pieceNum[pce]--
-	// pos.pceNum[wP] == 4
-
-	pos.pieceList[pce][tempPieceNum] = pos.pieceList[pce][pos.pieceNum[pce]]
-	//pos.pList[wP][3]	= pos.pList[wP][4] = sq4
-	/*
-		pos.pceNum[wP] == 4 Looping from 0 to 3
-		pos.pList[pce][0] == sq0
-		pos.pList[pce][1] == sq1
-		pos.pList[pce][2] == sq2
-		pos.pList[pce][3] == sq4
-	*/
-
 }
 
-func addPiece(sq, pce int, pos *Board) {
-
-	// // AssertTrue(PieceValid(pce))
-	// // AssertTrue(SquareOnBoard(sq))
-
-	colour := PieceColour[pce]
-
-	hashPiece(pce, sq, pos)
-
+func (pos *ChessBoard) addPiece(sq, pce int) {
+	pos.hashPiece(pce, sq)
 	pos.Pieces[sq] = pce
-
-	if PieceBig[pce] {
-		pos.bigPieceNum[colour]++
-		if PieceMaj[pce] {
-			pos.majorPieceNum[colour]++
-		} else {
-			pos.minorPieceNum[colour]++
-		}
-	} else {
-		SetBit(&pos.Pawns[colour], Sq64(sq))
-		SetBit(&pos.Pawns[Both], Sq64(sq))
-	}
-
-	pos.material[colour] += PieceVal[pce]
-	pos.pieceList[pce][pos.pieceNum[pce]] = sq
 	pos.pieceNum[pce]++
 }
 
-func movePiece(from, to int, pos *Board) {
-
-	// // AssertTrue(SquareOnBoard(from))
-	// // AssertTrue(SquareOnBoard(to))
-
+func (pos *ChessBoard) movePiece(from, to int) {
 	pce := pos.Pieces[from]
-	colour := PieceColour[pce]
 
 	// hash the piece out of the from square and then later hash it back in to the new square
-	hashPiece(pce, from, pos)
+	pos.hashPiece(pce, from)
 	pos.Pieces[from] = Empty
 
-	hashPiece(pce, to, pos)
+	pos.hashPiece(pce, to)
 	pos.Pieces[to] = pce
-
-	if !PieceBig[pce] {
-		ClearBit(&pos.Pawns[colour], Sq64(from))
-		ClearBit(&pos.Pawns[Both], Sq64(from))
-		SetBit(&pos.Pawns[colour], Sq64(to))
-		SetBit(&pos.Pawns[Both], Sq64(to))
-	}
-
-	// Update the square value for the given piece
-	// i.e. change its destination from 'from sq' -> 'to sq'
-	for index := 0; index < pos.pieceNum[pce]; index++ {
-		if pos.pieceList[pce][index] == from {
-			pos.pieceList[pce][index] = to
-
-			break
-		}
-	}
 }
 
 // MakeMove perform a move
 // return false if the side to move has left themselves in check after the move i.e. illegal move
-func MakeMove(pos *Board, move int) bool {
-
-	// // AssertTrue(// CheckBoard(pos))
-
+func (pos *ChessBoard) MakeMove(move int) bool {
 	from := FromSq(move)
 	to := ToSq(move)
 	side := pos.side
-
-	// Make sure all input info is valid
-	// // AssertTrue(SquareOnBoard(from))
-	// // AssertTrue(SquareOnBoard(to))
-	// // AssertTrue(SideValid(side))
-	// // AssertTrue(PieceValid(pos.Pieces[from]))
 
 	// Store has value before we do any hashing in/out of pieces etc
 	pos.history[pos.histPly].posKey = pos.posKey
@@ -194,31 +80,30 @@ func MakeMove(pos *Board, move int) bool {
 		// then we need to remove the black pawn right behind the new position of the white piece
 		// i.e. new_pos - 10 -> translated to array index
 		if side == White {
-			clearPiece(to-10, pos)
+			pos.clearPiece(to-10)
 		} else {
-			clearPiece(to+10, pos)
+			pos.clearPiece(to+10)
 		}
 	} else if move&MoveFlagCastle != 0 {
-		// if its a castlign move, based on the TO square, make the appopriate move, otherwise assert false
+		// if its a castling move, based on the TO square, make the appopriate move, otherwise assert false
 		switch to {
 		case C1:
-			movePiece(A1, D1, pos)
+			pos.movePiece(A1, D1)
 		case C8:
-			movePiece(A8, D8, pos)
+			pos.movePiece(A8, D8)
 		case G1:
-			movePiece(H1, F1, pos)
+			pos.movePiece(H1, F1)
 		case G8:
-			movePiece(H8, F8, pos)
+			pos.movePiece(H8, F8)
 		default:
-			// // AssertTrue(false)
 		}
 	}
 
 	// If the current enpassant square is SET, then we hash in the poskey
 	if pos.enPas != NoSquare {
-		hashEnPass(pos)
+		pos.hashEnPass()
 	}
-	hashCastlePerm(pos) // hash out the castling permissions
+	pos.hashCastlePerm() // hash out the castling permissions
 
 	// store information to the history array about this move
 	pos.history[pos.histPly].move = move
@@ -231,21 +116,19 @@ func MakeMove(pos *Board, move int) bool {
 	pos.castlePerm &= CastlePerm[to]
 	pos.enPas = NoSquare // set enpassant square to no square
 
-	hashCastlePerm(pos) // hash back in the castling perm
+	pos.hashCastlePerm() // hash back in the castling perm
 
 	pos.fiftyMove++ // increment firfty move rule
 
 	// get what piece, if any, was captured in the move and if somethig was actually captured
 	// i.e. captured piece is not empty remove captured piece and reset fifty move rule
 	if captured := Captured(move); captured != Empty {
-		// // AssertTrue(PieceValid(captured))
-		clearPiece(to, pos)
+		pos.clearPiece(to)
 		pos.fiftyMove = 0
 	}
 
 	// increase halfmove counter and ply counter values
 	pos.histPly++
-	pos.ply++
 
 	// check if we need to set a new en passant square i.e. if this is a pawn start
 	// then depending on the side find the piece just behind the new pawn destination
@@ -255,23 +138,20 @@ func MakeMove(pos *Board, move int) bool {
 		if move&MoveFlagPawnStart != 0 {
 			if side == White {
 				pos.enPas = from + 10
-				// // AssertTrue(RanksBoard[pos.enPas] == Rank3)
 			} else {
 				pos.enPas = from - 10
-				// // AssertTrue(RanksBoard[pos.enPas] == Rank6)
 			}
-			hashEnPass(pos) // hash in the enpass
+			pos.hashEnPass() // hash in the enpass
 		}
 	}
 
-	movePiece(from, to, pos)
+	pos.movePiece(from, to)
 
 	// get promoted piece and if its not empty, clear old piece (pawn)
 	// and add new piece (whatever was the selected promotion piece)
 	if promotedPiece := Promoted(move); promotedPiece != Empty {
-		// // AssertTrue(PieceValid(promotedPiece) && !IsPiecePawn[promotedPiece])
-		clearPiece(to, pos)
-		addPiece(to, promotedPiece, pos)
+		pos.clearPiece(to)
+		pos.addPiece(to, promotedPiece)
 	}
 
 	// if we move the king -> update king square
@@ -280,13 +160,11 @@ func MakeMove(pos *Board, move int) bool {
 	}
 
 	pos.side ^= 1 // change side to move
-	hashSide(pos) // hash in the new side
-
-	// // AssertTrue(// CheckBoard(pos))
+	pos.hashSide() // hash in the new side
 
 	// check if after this move, our king is in check -> if yes -> illegal move
-	if IsSquareAttacked(pos.kingSquare[side], pos.side, pos) {
-		TakeMove(pos)
+	if pos.IsSquareAttacked(pos.kingSquare[side], pos.side) {
+		pos.TakeMove()
 		return false
 	}
 
@@ -294,78 +172,66 @@ func MakeMove(pos *Board, move int) bool {
 }
 
 // TakeMove revert move, opposite to MakeMove()
-func TakeMove(pos *Board) {
-
-	// // AssertTrue(// CheckBoard(pos))
-
+func (pos *ChessBoard) TakeMove() {
 	pos.histPly--
-	pos.ply--
 
 	move := pos.history[pos.histPly].move
 	from := FromSq(move)
 	to := ToSq(move)
 
-	// // AssertTrue(SquareOnBoard(from))
-	// // AssertTrue(SquareOnBoard(to))
-
 	if pos.enPas != NoSquare {
-		hashEnPass(pos)
+		pos.hashEnPass()
 	}
-	hashCastlePerm(pos)
+	pos.hashCastlePerm()
 
 	pos.castlePerm = pos.history[pos.histPly].castlePerm
 	pos.fiftyMove = pos.history[pos.histPly].fiftyMove
 	pos.enPas = pos.history[pos.histPly].enPas
 
 	if pos.enPas != NoSquare {
-		hashEnPass(pos)
+		pos.hashEnPass()
 	}
-	hashCastlePerm(pos)
+	pos.hashCastlePerm()
 
 	pos.side ^= 1
-	hashSide(pos)
+	pos.hashSide()
 
 	if MoveFlagEnPass&move != 0 {
 		if pos.side == White {
-			addPiece(to-10, BlackPawn, pos)
+			pos.addPiece(to-10, BlackPawn)
 		} else {
-			addPiece(to+10, WhitePawn, pos)
+			pos.addPiece(to+10, WhitePawn)
 		}
 	} else if MoveFlagCastle&move != 0 {
 		switch to {
 		case C1:
-			movePiece(D1, A1, pos)
+			pos.movePiece(D1, A1)
 		case C8:
-			movePiece(D8, A8, pos)
+			pos.movePiece(D8, A8)
 		case G1:
-			movePiece(F1, H1, pos)
+			pos.movePiece(F1, H1)
 		case G8:
-			movePiece(F8, H8, pos)
+			pos.movePiece(F8, H8)
 		default:
-			// // AssertTrue(false)
 		}
 	}
 
-	movePiece(to, from, pos)
+	pos.movePiece(to, from)
 
 	if IsPieceKing[pos.Pieces[from]] {
 		pos.kingSquare[pos.side] = from
 	}
 
 	if captured := Captured(move); captured != Empty {
-		// // AssertTrue(PieceValid(captured))
-		addPiece(to, captured, pos)
+		pos.addPiece(to, captured)
 	}
 
 	if promoted := Promoted(move); promoted != Empty {
-		// // AssertTrue(PieceValid(Promoted(move)) && !IsPiecePawn[Promoted(move)])
-		clearPiece(from, pos)
+		pos.clearPiece(from)
 		if PieceColour[Promoted(move)] == White {
-			addPiece(from, WhitePawn, pos)
+			pos.addPiece(from, WhitePawn)
 		} else {
-			addPiece(from, BlackPawn, pos)
+			pos.addPiece(from, BlackPawn)
 		}
 	}
-
-	// // AssertTrue(// CheckBoard(pos))
 }
