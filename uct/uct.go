@@ -2,6 +2,7 @@ package uct
 
 import "fmt"
 import "sort"
+import "time"
 import "math/rand"
 import board "local/slinky/board"
 import "github.com/jinzhu/copier"
@@ -17,7 +18,7 @@ type moveScore struct {
 	visits float64
 }
 
-func uct(rootstate board.Board, originMove int, itermax int) moveScore {
+func uct(rootstate board.Board, originMove int, itermax int, timeData timeInfo) moveScore {
 	rootstate.MakeMove(originMove)
 	/* Check for immediate result
 	It is possible the game is already over by this point
@@ -32,7 +33,10 @@ func uct(rootstate board.Board, originMove int, itermax int) moveScore {
 	rootnode := CreateRootNode(rootstate)
 
 	state := rootstate
-	for i := 0; i < itermax; i++ {
+	// for i := 0; i < itermax; i++ {
+	elapsedTime := time.Since(timeData.startTime).Seconds() * 1000 // get elapsed time in ms
+
+	for timeData.isTimeSet == true && elapsedTime < float64(timeData.stopTime) {
 		// fmt.Println(state)
 		node := &rootnode
 		movesToRoot := 0
@@ -80,6 +84,8 @@ func uct(rootstate board.Board, originMove int, itermax int) moveScore {
 		for j := 0; j < movesToRoot; j++ {
 			state.TakeMove()
 		}
+
+		elapsedTime = time.Since(timeData.startTime).Seconds() * 1000 // get elapsed time in ms
 	}
 
 	sort.Slice(rootnode.childNodes, func(i, j int) bool {
@@ -90,25 +96,35 @@ func uct(rootstate board.Board, originMove int, itermax int) moveScore {
 	return moveScore{move: originMove, wins: bestMove.wins, visits: bestMove.visits}
 }
 
+type timeInfo struct {
+	startTime time.Time
+	stopTime int
+	isTimeSet bool
+}
+
 type uctArg struct {
 	state       board.Board
 	move        int
 	simulations int
+	timeData    timeInfo
 }
 
 func worker(jobs <-chan uctArg, results chan<- moveScore) {
 	for uctArguments := range jobs {
-		results <- uct(uctArguments.state, uctArguments.move, uctArguments.simulations)
+		results <- uct(uctArguments.state, uctArguments.move, uctArguments.simulations, uctArguments.timeData)
 	}
 }
 
 // GetEngineMoveFast returns the best move found by the UCT (computed in parallel)
-func GetEngineMoveFast(state board.Board, simulations int) int {
+func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInfo) (move int, score float64) {
 	availableMoves := state.GetMoves()
 	numMoves := len(availableMoves)
 
 	if numMoves == 0 {
 		panic("Game is already over, can't get engine move for a finished game!")
+	} else if numMoves == 1 {
+		// no clue what the score is here since we haven't actually searched the move
+		return availableMoves[0], 0.5
 	}
 
 	simPerMove := simulations / numMoves
@@ -122,7 +138,7 @@ func GetEngineMoveFast(state board.Board, simulations int) int {
 		go worker(jobs, results)
 	}
 
-	// todo BoardSize + 1 is not flexible
+	timeData := timeInfo { startTime: info.StartTime, stopTime: info.StopTime, isTimeSet: info.TimeSet}
 	bestMove := rankedMove{move: -1, score: 1.1}
 
 	for _, move := range availableMoves {
@@ -134,6 +150,7 @@ func GetEngineMoveFast(state board.Board, simulations int) int {
 			state:       &b,
 			move:        move,
 			simulations: simPerMove,
+			timeData:    timeData,
 		}
 	}
 
@@ -155,7 +172,7 @@ func GetEngineMoveFast(state board.Board, simulations int) int {
 		}
 	}
 
-	return bestMove.move
+	return bestMove.move, bestMove.score
 }
 
 func isImmediateResult(state board.Board, move int) (result bool, score moveScore) {
@@ -171,35 +188,34 @@ func isImmediateResult(state board.Board, move int) (result bool, score moveScor
 }
 
 // GetEngineMove returns the best move found by the UCT
-func GetEngineMove(state board.Board, simulations int) int {
-	availableMoves := state.GetMoves()
+// func GetEngineMove(state board.Board, simulations int) int {
+// 	availableMoves := state.GetMoves()
 
-	if len(availableMoves) == 0 {
-		panic("Game is already over, can't get engine move for a finished game!")
-	} else if len(availableMoves) == 1 {
-		return availableMoves[0]
-	}
+// 	if len(availableMoves) == 0 {
+// 		panic("Game is already over, can't get engine move for a finished game!")
+// 	} else if len(availableMoves) == 1 {
+// 		return availableMoves[0]
+// 	}
 
-	simPerMove := simulations / len(availableMoves)
+// 	simPerMove := simulations / len(availableMoves)
 
-	// todo BoardSize + 1 is not flexible
-	bestMove := rankedMove{move: -1, score: 1.1}
-	for _, move := range availableMoves {
-		b := state // todo does this copy ? or points
+// 	bestMove := rankedMove{move: -1, score: 1.1}
+// 	for _, move := range availableMoves {
+// 		b := state // todo does this copy ? or points
 
-		mScore := uct(b, move, simPerMove)
-		scoreValue := mScore.wins / mScore.visits
+// 		mScore := uct(b, move, simPerMove)
+// 		scoreValue := mScore.wins / mScore.visits
 
-		fmt.Printf("Move: %d: %.3f -> %f / %f\n", move, scoreValue, mScore.wins, mScore.visits)
-		// here the move_score refers to the best enemy reply
-		// therefore we want to minimize that i.e. chose the move
-		// which leads to the lowest scored best enemy reply
-		if scoreValue < bestMove.score {
-			bestMove.score = scoreValue
-			bestMove.move = move
-		}
-		// take move since b here is not a copy but points to the same position as state
-		b.TakeMove()
-	}
-	return bestMove.move
-}
+// 		fmt.Printf("Move: %d: %.3f -> %f / %f\n", move, scoreValue, mScore.wins, mScore.visits)
+// 		// here the move_score refers to the best enemy reply
+// 		// therefore we want to minimize that i.e. chose the move
+// 		// which leads to the lowest scored best enemy reply
+// 		if scoreValue < bestMove.score {
+// 			bestMove.score = scoreValue
+// 			bestMove.move = move
+// 		}
+// 		// take move since b here is not a copy but points to the same position as state
+// 		b.TakeMove()
+// 	}
+// 	return bestMove.move
+// }

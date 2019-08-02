@@ -393,17 +393,17 @@ func (pos *ChessBoard) IsPositionDraw() bool {
 func (pos *ChessBoard) GetResult(playerJM int) Result {
 
 	if pos.fiftyMove > 100 {
-		// fmt.Printf("1/2-1/2 {fifty move rule (claimed by Hugo)}\n")
+		// fmt.Printf("1/2-1/2 {fifty move rule (claimed by Slinky)}\n")
 		return Draw
 	}
 
 	if pos.GetThreeFoldRepetitionCount() >= 2 {
-		// fmt.Printf("1/2-1/2 {3-fold repetition (claimed by Hugo)}\n")
+		// fmt.Printf("1/2-1/2 {3-fold repetition (claimed by Slinky)}\n")
 		return Draw
 	}
 
 	if pos.IsPositionDraw() == true {
-		// fmt.Printf("1/2-1/2 {insufficient material (claimed by Hugo)}\n")
+		// fmt.Printf("1/2-1/2 {insufficient material (claimed by Slinky)}\n")
 		return Draw
 	}
 
@@ -415,14 +415,14 @@ func (pos *ChessBoard) GetResult(playerJM int) Result {
 
 	if InCheck == true {
 		if pos.Side == playerJM { // if i am the side in mate -> loss, else win
-			// fmt.Printf("0-1 {black mates (claimed by Hugo)}\n")
+			// fmt.Printf("0-1 {black mates (claimed by Slinky)}\n")
 			return Loss
 		}
-		// fmt.Printf("0-1 {white mates (claimed by Hugo)}\n")
+		// fmt.Printf("0-1 {white mates (claimed by Slinky)}\n")
 		return Win
 	}
 	// not in check but no legal moves left -> stalemate
-	// fmt.Printf("\n1/2-1/2 {stalemate (claimed by Hugo)}\n")
+	// fmt.Printf("\n1/2-1/2 {stalemate (claimed by Slinky)}\n")
 	return Draw
 
 }

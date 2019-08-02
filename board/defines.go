@@ -357,7 +357,7 @@ type SearchInfo struct {
 	nodes uint64 // count of all positions that the engine visits in the search tree
 
 	Quit    bool // if interrupt is sent -> quit
-	stopped bool
+	Stopped bool
 
 	GameMode     int  // see consts below
 	PostThinking bool // if true, engine posts its thinking to the gui

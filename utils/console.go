@@ -24,13 +24,13 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 	engineSide := board.Both
 	move := board.NoMove
 
-	engineSide = board.Black
+	// engineSide = board.Black
 	pos.ParseFen(board.StartFen)
 
 	command := ""
 
 	for {
-		if (pos.Side == engineSide || engineSide == board.Both) && pos.GetResult(pos.PlayerJustMoved) == board.NoWinner {
+		if pos.Side == engineSide && pos.GetResult(pos.PlayerJustMoved) == board.NoWinner {
 			info.StartTime = time.Now()
 			info.Depth = depth
 
@@ -40,15 +40,13 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 			}
 
 			// board.SearchPosition(pos, info)
-			engineMove := uct.GetEngineMove(pos, 10000)
-			fmt.Println(engineMove)
+			engineMove, _ := uct.GetEngineMoveFast(pos, 10000, info)
 			fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
 			pos.MakeMove(engineMove)
 			fmt.Println(pos)
-			fmt.Println(pos.PlayerJustMoved)
 		}
 
-		command, _ = inpututils.GetInput("\nHugo > ")
+		command, _ = inpututils.GetInput("\nSlinky > ")
 		if len(command) < 2 {
 			continue
 		}

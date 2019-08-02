@@ -20,7 +20,7 @@ func ReadInput(info *SearchInfo) {
 
 		reader := bufio.NewReader(os.Stdin)
 		text, _ := reader.ReadString('\n')
-		info.stopped = true
+		info.Stopped = true
 
 		// convert CRLF to LF
 		text = strings.Replace(text, "\n", "", -1)

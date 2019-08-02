@@ -5,6 +5,7 @@ import (
 	inpututils "local/input-utils"
 	stringutils "local/string-utils"
 	board "local/slinky/board"
+	uct "local/slinky/uct"
 	"strconv"
 	"strings"
 	"time"
@@ -95,7 +96,87 @@ func ParseGo(line string, info *board.SearchInfo, pos *board.ChessBoard) {
 		info.Depth, info.TimeSet)
 
 	// todo
-	// SearchPosition(pos, info)
+	SearchPosition(pos, info)
+}
+
+// CheckUp check if time up or interrupt from GUI
+func CheckUp(info *board.SearchInfo) {
+	// check if time up or interrupt from GUI
+	// fmt.Println(elapsed, info.StopTime, elapsed.After(info.StopTime))
+	elapsedTime := time.Since(info.StartTime).Seconds() * 1000 // get elapsed time in ms
+	if info.TimeSet == true && elapsedTime > float64(info.StopTime) {
+		info.Stopped = true
+	}
+	// if we received something from the gui -> set stopped/quit to true
+	// ReadInput(info)
+}
+
+const (
+	Infinite = 30000.0
+)
+
+// SearchPosition searches a given position
+func SearchPosition(pos *board.ChessBoard, info *board.SearchInfo) int {
+	// ... iterative deepening, search init
+	// for depth = 1 to maxDepth
+	// 		search with alphaBeta if you have enough time left
+	// you do not search to maxDepth from the start but instead search
+	// with depth 1, then 2, then 3 etc, because you first identify
+	// the principle variation or the potentially good moves and in this
+	// way when you search again with more depth you can easily eliminate
+	// a lot of bad nodes automatically
+
+	// if we can perform a book move, do that first, otherwise perform search
+	bestMove := board.GetBookMove(pos)
+	if bestMove != 0 {
+		PerformMove(pos, info, bestMove)
+		return 0
+	}
+
+	// do normal move search
+	bestScore := -Infinite
+	bestMove, bestScore = uct.GetEngineMoveFast(pos, 0, info)
+
+	// scale from percentage to centipawn loss/gain
+	// here is bestScore from point of view of enemy ?
+	if bestScore < 0.5 { // 0.5 indicates a draw i.e. balanced game
+		bestScore = (0.5 - bestScore) * 100
+	} else {
+		bestScore = (bestScore - 0.5) * 100
+	}
+
+	moveTime := int64(time.Since(info.StartTime).Seconds() * 1000) // the UCI protocol expects milliseconds
+	if info.GameMode == board.UciMode {
+		fmt.Printf("info score cp %d time %d ", int(bestScore), moveTime)
+	} else if info.PostThinking == true {
+		fmt.Printf("score:%d time:%d(ms)", int(bestScore), moveTime)
+	}
+	if info.GameMode == board.UciMode || info.PostThinking == true {
+		// Print the principle variation
+		// todo add ability to print out PV line
+		// pvMoves = GetPvLine(pos, currentDepth)
+		// fmt.Printf("pv")
+		// for pvNum := 0; pvNum < pvMoves; pvNum++ {
+		// 	fmt.Printf(" %s", PrintMove(pos.PvArray[pvNum]))
+		// }
+		// fmt.Println()
+		// fmt.Printf("Ordering: %.2f\n", info.failHighFirst/info.failHigh)
+	}
+
+	PerformMove(pos, info, bestMove)
+
+	return 0
+}
+
+// PerformMove performs the best found move from search or book
+func PerformMove(pos *board.ChessBoard, info *board.SearchInfo, bestMove int) {
+	if info.GameMode == board.UciMode {
+		fmt.Printf("bestmove %s\n", board.PrintMove(bestMove))
+	} else {
+		fmt.Printf("\n\n***!! Slinky makes move %s !!***\n\n", board.PrintMove(bestMove))
+		pos.MakeMove(bestMove)
+		fmt.Println(pos)
+	}
 }
 
 // ParsePosition parse UCI position
