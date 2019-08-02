@@ -99,17 +99,6 @@ func ParseGo(line string, info *board.SearchInfo, pos *board.ChessBoard) {
 	SearchPosition(pos, info)
 }
 
-// CheckUp check if time up or interrupt from GUI
-func CheckUp(info *board.SearchInfo) {
-	// check if time up or interrupt from GUI
-	// fmt.Println(elapsed, info.StopTime, elapsed.After(info.StopTime))
-	elapsedTime := time.Since(info.StartTime).Seconds() * 1000 // get elapsed time in ms
-	if info.TimeSet == true && elapsedTime > float64(info.StopTime) {
-		info.Stopped = true
-	}
-	// if we received something from the gui -> set stopped/quit to true
-	// ReadInput(info)
-}
 
 const (
 	Infinite = 30000.0
@@ -151,6 +140,7 @@ func SearchPosition(pos *board.ChessBoard, info *board.SearchInfo) int {
 	} else if info.PostThinking == true {
 		fmt.Printf("score:%d time:%d(ms)", int(bestScore), moveTime)
 	}
+	fmt.Printf("\n")
 	if info.GameMode == board.UciMode || info.PostThinking == true {
 		// Print the principle variation
 		// todo add ability to print out PV line

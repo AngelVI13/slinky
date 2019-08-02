@@ -8,10 +8,8 @@ const (
 	// BoardSquareNum is the total number of squares in the board representation
 	BoardSquareNum = 120
 	// BookFile book filename
-	BookFile = "utils/book.txt"
+	BookFile = "board/book.txt"
 )
-
-//
 
 // Defines for piece values
 const (

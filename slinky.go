@@ -53,7 +53,7 @@ func main() {
 	var info board.SearchInfo
 
 	line := ""
-	fmt.Printf("Welcome to Hugo! Type 'hugo' for console mode...\n")
+	fmt.Printf("Welcome to Slinky! Type 'slinky' for console mode...\n")
 
 	for {
 		line, _ = inpututils.GetInput("")
@@ -67,7 +67,7 @@ func main() {
 				break
 			}
 			continue
-		} else if strings.Contains(line, "hugo") {
+		} else if strings.Contains(line, "slinky") {
 			utils.ConsoleLoop(&board_, &info)
 			if info.Quit == true {
 				break

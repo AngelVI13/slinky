@@ -16,6 +16,7 @@ type moveScore struct {
 	move   int
 	wins   float64
 	visits float64
+	totalSimulations int
 }
 
 func uct(rootstate board.Board, originMove int, itermax int, timeData timeInfo) moveScore {
@@ -31,12 +32,13 @@ func uct(rootstate board.Board, originMove int, itermax int, timeData timeInfo) 
 	}
 
 	rootnode := CreateRootNode(rootstate)
-
 	state := rootstate
-	// for i := 0; i < itermax; i++ {
-	elapsedTime := time.Since(timeData.startTime).Seconds() * 1000 // get elapsed time in ms
 
+	simulations := 0
+
+	elapsedTime := time.Since(timeData.startTime).Seconds() * 1000 // get elapsed time in ms
 	for timeData.isTimeSet == true && elapsedTime < float64(timeData.stopTime) {
+		simulations++ // count number of simulations done
 		// fmt.Println(state)
 		node := &rootnode
 		movesToRoot := 0
@@ -93,7 +95,7 @@ func uct(rootstate board.Board, originMove int, itermax int, timeData timeInfo) 
 	})
 	// above we sort by descending order -> move with most visits is the first element
 	bestMove := rootnode.childNodes[0]
-	return moveScore{move: originMove, wins: bestMove.wins, visits: bestMove.visits}
+	return moveScore{move: originMove, wins: bestMove.wins, visits: bestMove.visits, totalSimulations: simulations}
 }
 
 type timeInfo struct {
@@ -158,11 +160,13 @@ func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInf
 
 	var mScore moveScore
 	var scoreValue float64
+	var totalSimulations int
 	for _i := 0; _i < numMoves; _i++ {
 		mScore = <-results
 		scoreValue = mScore.wins / mScore.visits
 
-		fmt.Printf("Move: %d: %.3f -> %f / %f\n", mScore.move, scoreValue, mScore.wins, mScore.visits)
+		fmt.Printf("Move: %d: %.3f -> %.1f / %.0f | %d\n",
+					mScore.move, scoreValue, mScore.wins, mScore.visits, mScore.totalSimulations)
 		// here the move_score refers to the best enemy reply
 		// therefore we want to minimize that i.e. chose the move
 		// which leads to the lowest scored best enemy reply
@@ -170,7 +174,9 @@ func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInf
 			bestMove.score = scoreValue
 			bestMove.move = mScore.move
 		}
+		totalSimulations += mScore.totalSimulations
 	}
+	fmt.Printf("Total simulations done: %d\n", totalSimulations)
 
 	return bestMove.move, bestMove.score
 }
