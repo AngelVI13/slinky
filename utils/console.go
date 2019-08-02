@@ -23,6 +23,7 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 	moveTime := 3000 // 3 seconds move time
 	engineSide := board.Both
 	move := board.NoMove
+	playout := false  // forces engine to play until game is over
 
 	// engineSide = board.Black
 	pos.ParseFen(board.StartFen)
@@ -30,7 +31,7 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 	command := ""
 
 	for {
-		if pos.Side == engineSide && pos.GetResult(pos.PlayerJustMoved) == board.NoWinner {
+		if (pos.Side == engineSide || playout == true) && pos.GetResult(pos.PlayerJustMoved) == board.NoWinner {
 			info.StartTime = time.Now()
 			info.Depth = depth
 
@@ -44,6 +45,10 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 			fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
 			pos.MakeMove(engineMove)
 			fmt.Println(pos)
+
+			if playout == true {
+				continue
+			}
 		}
 
 		command, _ = inpututils.GetInput("\nSlinky > ")
@@ -66,6 +71,7 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 			fmt.Printf("view - show current depth and moveTime settings\n")
 			fmt.Printf("showline - show current move line so far\n")
 			fmt.Printf("getmoves - show all moves")
+			fmt.Printf("playout - force engine to play position till end")
 			fmt.Printf("** note ** - to reset time and depth, set to 0\n")
 			fmt.Printf("enter moves using b7b8q notation\n\n\n")
 			continue
@@ -82,6 +88,11 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 		if strings.Contains(command, "quit") {
 			info.Quit = true
 			break
+		}
+
+		if strings.Contains(command, "playout") {
+			playout = true
+			continue
 		}
 
 		if strings.Contains(command, "getmoves") {

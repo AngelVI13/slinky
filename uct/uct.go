@@ -165,8 +165,8 @@ func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInf
 		mScore = <-results
 		scoreValue = mScore.wins / mScore.visits
 
-		fmt.Printf("Move: %d: %.3f -> %.1f / %.0f (%d)\n",
-					mScore.move, scoreValue, mScore.wins, mScore.visits, mScore.totalSimulations)
+		fmt.Printf("Move: %s: %.3f -> %.1f / %.0f (%d)\n",
+					board.PrintMove(mScore.move), scoreValue, mScore.wins, mScore.visits, mScore.totalSimulations)
 		// here the move_score refers to the best enemy reply
 		// therefore we want to minimize that i.e. chose the move
 		// which leads to the lowest scored best enemy reply
