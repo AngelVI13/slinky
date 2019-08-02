@@ -17,7 +17,7 @@ import (
 // go depth 6 wtime 180000 btime 100000 binc 1000 winc 1000 movetime 1000 movestogo 40
 func ParseGo(line string, info *board.SearchInfo, pos *board.ChessBoard) {
 	depth := -1
-	movesToGo := 30
+	movesToGo := 15
 	moveTime := -1
 	timeInt := -1
 	inc := 0
@@ -124,7 +124,8 @@ func SearchPosition(pos *board.ChessBoard, info *board.SearchInfo) int {
 
 	// do normal move search
 	bestScore := -Infinite
-	bestMove, bestScore = uct.GetEngineMoveFast(pos, 0, info)
+	nodes := 0
+	bestMove, bestScore, nodes = uct.GetEngineMoveFast(pos, 0, info)
 
 	// scale from percentage to centipawn loss/gain
 	// here is bestScore from point of view of enemy ?
@@ -136,7 +137,7 @@ func SearchPosition(pos *board.ChessBoard, info *board.SearchInfo) int {
 
 	moveTime := int64(time.Since(info.StartTime).Seconds() * 1000) // the UCI protocol expects milliseconds
 	if info.GameMode == board.UciMode {
-		fmt.Printf("info score cp %d time %d ", int(bestScore), moveTime)
+		fmt.Printf("info score cp %d nodes %d time %d ", int(bestScore), nodes, moveTime)
 	} else if info.PostThinking == true {
 		fmt.Printf("score:%d time:%d(ms)", int(bestScore), moveTime)
 	}

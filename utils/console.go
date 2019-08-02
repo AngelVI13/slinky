@@ -40,7 +40,7 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 			}
 
 			// board.SearchPosition(pos, info)
-			engineMove, _ := uct.GetEngineMoveFast(pos, 10000, info)
+			engineMove, _, _ := uct.GetEngineMoveFast(pos, 10000, info)
 			fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
 			pos.MakeMove(engineMove)
 			fmt.Println(pos)

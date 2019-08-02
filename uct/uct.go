@@ -118,7 +118,7 @@ func worker(jobs <-chan uctArg, results chan<- moveScore) {
 }
 
 // GetEngineMoveFast returns the best move found by the UCT (computed in parallel)
-func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInfo) (move int, score float64) {
+func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInfo) (move int, score float64, totalSim int) {
 	availableMoves := state.GetMoves()
 	numMoves := len(availableMoves)
 
@@ -126,7 +126,7 @@ func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInf
 		panic("Game is already over, can't get engine move for a finished game!")
 	} else if numMoves == 1 {
 		// no clue what the score is here since we haven't actually searched the move
-		return availableMoves[0], 0.5
+		return availableMoves[0], 0.5, 0
 	}
 
 	simPerMove := simulations / numMoves
@@ -165,7 +165,7 @@ func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInf
 		mScore = <-results
 		scoreValue = mScore.wins / mScore.visits
 
-		fmt.Printf("Move: %d: %.3f -> %.1f / %.0f | %d\n",
+		fmt.Printf("Move: %d: %.3f -> %.1f / %.0f (%d)\n",
 					mScore.move, scoreValue, mScore.wins, mScore.visits, mScore.totalSimulations)
 		// here the move_score refers to the best enemy reply
 		// therefore we want to minimize that i.e. chose the move
@@ -178,7 +178,7 @@ func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInf
 	}
 	fmt.Printf("Total simulations done: %d\n", totalSimulations)
 
-	return bestMove.move, bestMove.score
+	return bestMove.move, bestMove.score, totalSimulations
 }
 
 func isImmediateResult(state board.Board, move int) (result bool, score moveScore) {
