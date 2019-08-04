@@ -6,6 +6,7 @@ import (
 	utils "local/slinky/utils"
 	inpututils "local/input-utils"
 	"strings"
+	"os"
 )
 
 const (
@@ -46,12 +47,7 @@ func showSqAtBySide(side int, pos *board.ChessBoard) {
 
 }
 
-func main() {
-	board.AllInit()
-
-	board_ := board.CreateBoard()
-	var info board.SearchInfo
-
+func normalMode(board_ *board.ChessBoard, info *board.SearchInfo) {
 	line := ""
 	fmt.Printf("Welcome to Slinky! Type 'slinky' for console mode...\n")
 
@@ -62,13 +58,13 @@ func main() {
 		}
 
 		if strings.Contains(line, "uci") {
-			utils.UciLoop(&board_, &info)
+			utils.UciLoop(board_, info)
 			if info.Quit == true {
 				break
 			}
 			continue
 		} else if strings.Contains(line, "slinky") {
-			utils.ConsoleLoop(&board_, &info)
+			utils.ConsoleLoop(board_, info)
 			if info.Quit == true {
 				break
 			}
@@ -77,4 +73,23 @@ func main() {
 			break
 		}
 	}
+}
+
+func main() {
+	board.AllInit()
+
+	board_ := board.CreateBoard()
+	var info board.SearchInfo
+
+	args := os.Args[1:]  // args excluding program name
+	argStr := strings.Join(args, " ")
+	fmt.Println(argStr)
+	argCommands := strings.Split(argStr, ",")
+
+	if len(args) == 0 {
+		normalMode(&board_, &info)
+	} else {
+		utils.CommandLoop(&board_, &info, argCommands)
+	}
+
 }
