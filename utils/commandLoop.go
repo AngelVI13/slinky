@@ -83,6 +83,11 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 			continue
 		}
 
+		if strings.Contains(command, "position") {
+			ParsePosition(command, pos)
+			continue
+		}
+
 		if strings.Contains(command, "quit") {
 			info.Quit = true
 			break
