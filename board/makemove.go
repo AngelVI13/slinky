@@ -64,6 +64,7 @@ func (pos *ChessBoard) movePiece(from, to int) {
 	pos.Pieces[to] = pce
 }
 
+// GetMoves returns a list of legal moves for the current position
 func (pos *ChessBoard) GetMoves() []int {
 	var moveList MoveList
 	pos.GenerateAllMoves(&moveList)
@@ -82,6 +83,7 @@ func (pos *ChessBoard) GetMoves() []int {
 	return legalMoveList
 }
 
+// IsMoveLegal determines if a move is legal by making the move and check if the king is in check
 func (pos *ChessBoard) IsMoveLegal(move int) bool {
 	// Immitate performing the move and check if king is not
 	// in check after the move -> legal move
@@ -176,12 +178,10 @@ func (pos *ChessBoard) IsMoveLegal(move int) bool {
 		pos.kingSquare[pos.Side] = from
 	}
 
-	// todo captured is called twice in this method for the same move -> unnecessary
 	if captured != Empty {
 		pos.addPiece(to, captured)
 	}
 
-	// todo promoted is called twice
 	if promotedPiece != Empty {
 		pos.clearPiece(from)
 		if PieceColour[promotedPiece] == White {
@@ -296,10 +296,7 @@ func (pos *ChessBoard) MakeMove(move int) {
 	// check if after this move, our king is in check -> if yes -> illegal move
 	if pos.IsSquareAttacked(pos.kingSquare[side], pos.Side) {
 		pos.TakeMove()
-		// return false
 	}
-
-	// return true
 }
 
 // TakeMove revert move, opposite to MakeMove()

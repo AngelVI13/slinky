@@ -39,7 +39,6 @@ func uct(rootstate board.Board, originMove int, itermax int, timeData timeInfo) 
 	elapsedTime := time.Since(timeData.startTime).Seconds() * 1000 // get elapsed time in ms
 	for timeData.isTimeSet == true && elapsedTime < float64(timeData.stopTime) {
 		simulations++ // count number of simulations done
-		// fmt.Println(state)
 		node := &rootnode
 		movesToRoot := 0
 
@@ -83,6 +82,7 @@ func uct(rootstate board.Board, originMove int, itermax int, timeData timeInfo) 
 			node = node.parent
 		}
 
+		// Revert all the made moves
 		for j := 0; j < movesToRoot; j++ {
 			state.TakeMove()
 		}
@@ -90,6 +90,7 @@ func uct(rootstate board.Board, originMove int, itermax int, timeData timeInfo) 
 		elapsedTime = time.Since(timeData.startTime).Seconds() * 1000 // get elapsed time in ms
 	}
 
+	// Todo try returning move with highest average score
 	sort.Slice(rootnode.childNodes, func(i, j int) bool {
 		return rootnode.childNodes[i].visits > rootnode.childNodes[j].visits
 	})

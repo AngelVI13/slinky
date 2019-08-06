@@ -34,7 +34,7 @@ func InitSq120To64() {
 	}
 
 	// Set invalid values for all squares in 64Sq array
-	for index := 0; index < 64; index++ {
+	for index := 0; index < InnerSquareNum; index++ {
 		Sq64ToSq120[index] = 120
 	}
 	// The above setup is later used for fail safe check that everything is set correctly
@@ -53,7 +53,7 @@ func InitSq120To64() {
 // InitHashKeys initializes hashkeys for all pieces and possible positions, for castling rights, for side to move
 func InitHashKeys() {
 	for i := 0; i < 13; i++ {
-		for j := 0; j < 120; j++ {
+		for j := 0; j < BoardSquareNum; j++ {
 			PieceKeys[i][j] = rand.Uint64() // returns a random 64 bit number
 		}
 	}

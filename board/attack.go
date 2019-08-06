@@ -10,10 +10,10 @@ var kingDir = [8]int{-1, -10, 1, 10, -9, -11, 11, 9}
 
 // IsSquareAttacked determines if a given square is attacked from the opponent
 func (pos *ChessBoard) IsSquareAttacked(sq, side int) bool {
-	// side here is the attacking side !!!!!!!!!!!!!!!!!
+	// side here is the attacking side !
 
 	// pawns
-	// if attacking side is white and there are pawns infornt to the left and right of us, then we are attacked
+	// if attacking side is white and there are pawns in front to the left and right of us, then we are attacked
 	if side == White {
 		if pos.Pieces[sq-11] == WhitePawn || pos.Pieces[sq-9] == WhitePawn {
 			return true
@@ -26,9 +26,9 @@ func (pos *ChessBoard) IsSquareAttacked(sq, side int) bool {
 
 	// knights
 	// Loop through 8 directions
-	for index := 0; index < 8; index++ {
+	for _, dir := range knightDir {
 		// find what piece is in that direction
-		pce := pos.Pieces[sq+knightDir[index]]
+		pce := pos.Pieces[sq+dir]
 		// if there is a knight of the opposite side at that piece -> return true
 		if pce != OffBoard && IsPieceKnight[pce] && PieceColour[pce] == side {
 			return true
@@ -36,13 +36,13 @@ func (pos *ChessBoard) IsSquareAttacked(sq, side int) bool {
 	}
 
 	// rooks, queens
-	for index := 0; index < 4; index++ {
-		dir := rookDir[index]  // get current direction
+	for _, dir := range rookDir {
 		tSq := sq + dir        // take the first square
 		pce := pos.Pieces[tSq] // see what piece is there
 		for pce != OffBoard {  // while the piece is not OffBoard
 			if pce != Empty { // if we hit a piece
-				if IsPieceRookQueen[pce] && PieceColour[pce] == side { // if that piece is a rook or queen from the opposite side
+				// if that piece is a rook or queen from the opposite side
+				if IsPieceRookQueen[pce] && PieceColour[pce] == side {
 					return true // our square is under attack -> return true
 				}
 				break // otherwise we hit a piece that is not an attacker -> try another direction
@@ -53,8 +53,7 @@ func (pos *ChessBoard) IsSquareAttacked(sq, side int) bool {
 	}
 
 	// bishops, queens
-	for index := 0; index < 4; index++ { // !!!!! could be rewriten as for _, dir := range bishopDir !!!!!!
-		dir := bishopDir[index]
+	for _, dir := range bishopDir {
 		tSq := sq + dir
 		pce := pos.Pieces[tSq]
 		for pce != OffBoard {
@@ -70,8 +69,8 @@ func (pos *ChessBoard) IsSquareAttacked(sq, side int) bool {
 	}
 
 	// kings
-	for index := 0; index < 8; index++ {
-		pce := pos.Pieces[sq+kingDir[index]]
+	for _, dir := range kingDir {
+		pce := pos.Pieces[sq+dir]
 		if pce != OffBoard && IsPieceKing[pce] && PieceColour[pce] == side {
 			return true
 		}

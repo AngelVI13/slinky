@@ -4,7 +4,6 @@ import (
 	"fmt"
 	board "local/slinky/board"
 	utils "local/slinky/utils"
-	inpututils "local/input-utils"
 	"strings"
 	"os"
 )
@@ -52,7 +51,7 @@ func normalMode(board_ *board.ChessBoard, info *board.SearchInfo) {
 	fmt.Printf("Welcome to Slinky! Type 'slinky' for console mode...\n")
 
 	for {
-		line, _ = inpututils.GetInput("")
+		line, _ = utils.GetInput("")
 		if len(line) < 2 {
 			continue
 		}

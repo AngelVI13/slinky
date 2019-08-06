@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"fmt"
-	"local/string-utils"
 	"math/rand"
 	"strings"
 	"time"
@@ -58,8 +57,8 @@ func GetBookMove(pos *ChessBoard) int {
 
 	for _, bookLine := range book {
 		if strings.Contains(bookLine, currentLine) {
-			nextMovesStr := stringutils.RemoveStringToTheLeftOfMarker(bookLine, currentLine)
-			nextMoveStr := stringutils.RemoveStringToTheRightOfMarker(nextMovesStr, " ")
+			nextMovesStr := RemoveStringToTheLeftOfMarker(bookLine, currentLine)
+			nextMoveStr := RemoveStringToTheRightOfMarker(nextMovesStr, " ")
 
 			if len(nextMoveStr) > 5 {
 				fmt.Println("Book move parsing error")
@@ -76,4 +75,32 @@ func GetBookMove(pos *ChessBoard) int {
 		return bookMoves[rand.Intn(numberOfBookMoves)]
 	}
 	return 0
+}
+
+// RemoveStringToTheLeftOfMarker Removes substring to the left of a marker. If markers not in string -> return unchanged string.
+func RemoveStringToTheLeftOfMarker(s, marker string) (result string) {
+	markerIdx := strings.Index(s, marker)
+	if markerIdx == -1 {
+		return s
+	}
+
+	markerIdx = markerIdx + len(marker)
+
+	textForRemoval := s[0:markerIdx]
+	resultStr := strings.Replace(s, textForRemoval, "", -1)
+	return resultStr
+}
+
+// RemoveStringToTheRightOfMarker Removes substring to the right of a marker. If markers not in string -> return unchanged string.
+func RemoveStringToTheRightOfMarker(s, marker string) (result string) {
+	markerIdx := strings.Index(s, marker)
+	if markerIdx == -1 {
+		return s
+	}
+
+	// markerIdx = markerIdx + len(marker)
+
+	textForRemoval := s[markerIdx:len(s)]
+	resultStr := strings.Replace(s, textForRemoval, "", -1)
+	return resultStr
 }

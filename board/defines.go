@@ -7,6 +7,8 @@ const (
 	Name = "Slinky 1.0"
 	// BoardSquareNum is the total number of squares in the board representation
 	BoardSquareNum = 120
+	// InnerSquareNum is the number of squares for a normal chess board i.e. 8x8
+	InnerSquareNum = 64
 	// BookFile book filename
 	BookFile = "board/book.txt"
 )
@@ -191,27 +193,15 @@ type Undo struct {
 var Sq120ToSq64 [BoardSquareNum]int
 
 // Sq64ToSq120 would return the index of 64 mapped to a 120 square board
-var Sq64ToSq120 [64]int
+var Sq64ToSq120 [InnerSquareNum]int
 
 // FileRankToSquare converts give file and rank to a square index
 func FileRankToSquare(file, rank int) (square int) {
 	return ((21 + file) + (rank * 10))
 }
 
-// !!!!!!!!! Consider Removing these because the add extra overhead
-
-// Sq64 returns the element at sq120 base
-func Sq64(sq120 int) int {
-	return Sq120ToSq64[sq120]
-}
-
-// Sq120 returns the element at sq64 base
-func Sq120(sq64 int) int {
-	return Sq64ToSq120[sq64]
-}
-
 // PieceKeys hashkeys for each piece for each possible position for the key
-var PieceKeys [13][120]uint64
+var PieceKeys [13][BoardSquareNum]uint64
 
 // SideKey the hashkey associated with the current side
 var SideKey uint64
@@ -319,7 +309,7 @@ const (
 )
 
 const (
-	// MaxPositionMoves maximum number of posible moves for a given position
+	// MaxPositionMoves maximum number of possible moves for a given position
 	MaxPositionMoves int = 256
 )
 
@@ -329,25 +319,15 @@ type MoveList struct {
 	Count int // number of moves on the moves list
 }
 
-// Debug variable that enables/disables debugging
-var Debug = true
-
 const (
 	// NoMove signifies no move
 	NoMove int = 0
-)
-
-const (
-	// MaxDepth maximum search depth
-	MaxDepth int = 64
 )
 
 // SearchInfo struct to hold search related information
 type SearchInfo struct {
 	StartTime time.Time
 	StopTime  int
-	Depth     int
-	depthSet  int
 	TimeSet   bool
 	movesToGo int
 	infinite  bool // if this is true, do not stop search based on time but when the gui sends the stop command
@@ -365,8 +345,6 @@ type SearchInfo struct {
 const (
 	// UciMode mode using the UCI protocol
 	UciMode = iota
-	// XBoardMode mode using the XBoard protocol
-	XBoardMode
 	// ConsoleMode mode using the console for input
 	ConsoleMode
 )
@@ -502,22 +480,8 @@ var PieceSlides = map[int]bool{
 	BlackKing:   false,
 }
 
-// LoopSlidePiece sliding pieces slice used for looping
-var LoopSlidePiece = [...]int{WhiteBishop, WhiteRook, WhiteQueen, 0, BlackBishop, BlackRook, BlackQueen, 0}
-
-// LoopSlideIndex sliding pieces index slice to index where
-// the white pieces start in the above LoopSlidePiece, and where black
-var LoopSlideIndex = [...]int{0, 4}
-
-// LoopNonSlidePiece non-sliding pieces slice used for looping
-var LoopNonSlidePiece = [...]int{WhiteKnight, WhiteKing, 0, BlackKnight, BlackKing, 0}
-
-// LoopNonSlideIndex non-sliding pieces index slice to index where
-// the white pieces start in the above LoopSlidePiece, and where black
-var LoopNonSlideIndex = [...]int{0, 3}
-
-// PiececeDir squares increment for each direction
-var PiececeDir = map[int][]int{
+// PieceDir squares increment for each direction
+var PieceDir = map[int][]int{
 	Empty:       {0, 0, 0, 0, 0, 0, 0},
 	WhitePawn:   {0, 0, 0, 0, 0, 0, 0},
 	WhiteKnight: {-8, -19, -21, -12, 8, 19, 21, 12},

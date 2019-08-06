@@ -49,8 +49,8 @@ func (pos *ChessBoard) Reset() {
 	}
 
 	// Set all real board positions to Empty
-	for i := 0; i < 64; i++ {
-		pos.Pieces[Sq120(i)] = Empty
+	for i := 0; i < InnerSquareNum; i++ {
+		pos.Pieces[Sq64ToSq120[i]] = Empty
 	}
 
 	// Reset piece number
@@ -69,20 +69,19 @@ func (pos *ChessBoard) Reset() {
 	pos.posKey = 0
 }
 
+// GetEnemy Returns the enemy of a given player
 func (pos *ChessBoard) GetEnemy(playerJM int) int {
 	return playerJM ^ 1
 }
 
+// GetPlayerJustMoved returns the player that just made a move
 func (pos *ChessBoard) GetPlayerJustMoved() int {
 	return pos.PlayerJustMoved
 }
 
 // ParseFen parse fen position string and setup a position accordingly
-// TODO FIX ERROR HANDLING, now it simply returns a non-zero int whenever there is an error
-func (pos *ChessBoard) ParseFen(fen string) int {
-	// // AssertTrue(fen != "")
-	// // AssertTrue(pos != nil)
-
+// TODO Split into smaller parts
+func (pos *ChessBoard) ParseFen(fen string) {
 	rank := Rank8 // we start from rank 8 since the notation starts from rank 8
 	file := FileA
 	piece := 0
@@ -111,15 +110,14 @@ func (pos *ChessBoard) ParseFen(fen string) int {
 			char++
 			continue
 		default:
-			fmt.Println("FEN error")
-			return -1
+			panic("FEN error")
 		}
 
 		// This loop, skips over all empty positions in a rank
 		// When it comes to a piece that is different that "1"-"8" it places it on the corresponding square
 		for i := 0; i < count; i++ {
 			sq64 = rank*8 + file
-			sq120 = Sq120(sq64)
+			sq120 = Sq64ToSq120[sq64]
 			if piece != Empty {
 				pos.Pieces[sq120] = piece
 			}
@@ -131,14 +129,15 @@ func (pos *ChessBoard) ParseFen(fen string) int {
 	newChar := ""
 	// newChar should be set to the side to move part of the FEN string here
 	newChar = string(fen[char])
-	// // AssertTrue(newChar == "w" || newChar == "b")
 
 	if newChar == "w" {
 		pos.Side = White
 		pos.PlayerJustMoved = Black
-	} else {
+	} else if newChar == "b" {
 		pos.Side = Black
 		pos.PlayerJustMoved = White
+	} else {
+		panic(fmt.Sprintf("Unknown side to move: %s", newChar))
 	}
 
 	// move character pointer 2 characters further and it should now point to the start of the castling permissions part of FEN
@@ -177,8 +176,9 @@ func (pos *ChessBoard) ParseFen(fen string) int {
 		rank, _ := strconv.Atoi(string(fen[char])) // get rank number
 		rank--                                     // decrement rank to match our indexes, i.e. Rank1 == 0
 
-		// // AssertTrue(file >= FileA && file <= FileH)
-		// // AssertTrue(rank >= Rank1 && rank <= Rank8)
+		if (file < FileA || file > FileH) || (rank < Rank1 || rank > Rank8) {
+			panic(fmt.Sprintf("File or rank out of bounds: file(%d) rank(%d)", file, rank))
+		}
 
 		pos.enPas = FileRankToSquare(file, rank)
 	}
@@ -186,8 +186,6 @@ func (pos *ChessBoard) ParseFen(fen string) int {
 	pos.posKey = GeneratePosKey(pos) // generate pos key for new position
 
 	pos.UpdateListsMaterial()
-
-	return 0
 }
 
 // UpdateListsMaterial updates all material related piece lists
@@ -248,7 +246,6 @@ func (pos *ChessBoard) MaterialDraw() bool {
 	return false
 }
 
-// todo might need to accept value receiver
 func (pos *ChessBoard) String() string {
 	line := fmt.Sprintf("\nGame Board:\n\n")
 

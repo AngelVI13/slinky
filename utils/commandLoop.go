@@ -4,7 +4,6 @@ import (
 	"fmt"
 	board "local/slinky/board"
 	uct "local/slinky/uct"
-	stringutils "local/string-utils"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +14,6 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 	info.GameMode = board.ConsoleMode
 	info.PostThinking = true
 
-	depth := board.MaxDepth
 	moveTime := 3000 // 3 seconds move time
 	engineSide := board.Both
 	move := board.NoMove
@@ -31,7 +29,6 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 		// todo i.e. need to move this code to under cmd "go" or "force" etc.
 		if (pos.Side == engineSide || playout == true) && pos.GetResult(pos.PlayerJustMoved) == board.NoWinner {
 			info.StartTime = time.Now()
-			info.Depth = depth
 
 			if moveTime != 0 {
 				info.TimeSet = true
@@ -78,7 +75,7 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 		if strings.Contains(command, "setboard") {
 			engineSide = board.Both
 			startStr := "setboard "
-			fen := stringutils.RemoveStringToTheLeftOfMarker(command, startStr)
+			fen := board.RemoveStringToTheLeftOfMarker(command, startStr)
 			pos.ParseFen(fen)
 			continue
 		}
@@ -129,13 +126,6 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 		}
 
 		if strings.Contains(command, "view") {
-			// todo remove depth option
-			if depth == board.MaxDepth {
-				fmt.Printf("depth not set ")
-			} else {
-				fmt.Printf("depth %d", depth)
-			}
-
 			if moveTime != 0 {
 				fmt.Printf(" moveTime %ds\n", moveTime/1000)
 			} else {
@@ -150,18 +140,13 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 		}
 
 		if strings.Contains(command, "depth") {
-			depthStr1 := stringutils.RemoveStringToTheLeftOfMarker(command, "depth ")
-			depthStr2 := stringutils.RemoveStringToTheRightOfMarker(depthStr1, " ")
-			depth, _ = strconv.Atoi(depthStr2)
-			if depth == 0 {
-				depth = board.MaxDepth
-			}
+			// Depth is not supported for MCTS implementation
 			continue
 		}
 
 		if strings.Contains(command, "time") {
-			moveTimeStr1 := stringutils.RemoveStringToTheLeftOfMarker(command, "time ")
-			moveTimeStr2 := stringutils.RemoveStringToTheRightOfMarker(moveTimeStr1, " ")
+			moveTimeStr1 := board.RemoveStringToTheLeftOfMarker(command, "time ")
+			moveTimeStr2 := board.RemoveStringToTheRightOfMarker(moveTimeStr1, " ")
 			moveTime, _ = strconv.Atoi(moveTimeStr2)
 			moveTime *= 1000
 			continue
