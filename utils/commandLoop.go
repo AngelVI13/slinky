@@ -9,43 +9,38 @@ import (
 	"time"
 )
 
+func runEngine(pos *board.ChessBoard, info *board.SearchInfo, moveTime int) (gameOver bool) {
+	if pos.GetResult(pos.PlayerJustMoved) == board.NoWinner {
+		info.StartTime = time.Now()
+
+		if moveTime != 0 {
+			info.TimeSet = true
+			info.StopTime = moveTime
+		}
+
+		// board.SearchPosition(pos, info)
+		engineMove, _, _ := uct.GetEngineMoveFast(pos, 10000, info)
+		fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
+		pos.MakeMove(engineMove)
+		fmt.Println(pos)
+		return false
+	}
+	return true
+}
+
 // CommandLoop command loop for interacting with pyslinky GUI
 func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 	info.GameMode = board.ConsoleMode
 	info.PostThinking = true
 
 	moveTime := 3000 // 3 seconds move time
-	engineSide := board.Both
 	move := board.NoMove
-	playout := false  // forces engine to play until game is over
 
-	// engineSide = board.Black
 	pos.ParseFen(board.StartFen)
 
 	command := ""
 
 	for _, value := range cmds {
-		// todo this doesn't work because this is not an infinite for loop
-		// todo i.e. need to move this code to under cmd "go" or "force" etc.
-		if (pos.Side == engineSide || playout == true) && pos.GetResult(pos.PlayerJustMoved) == board.NoWinner {
-			info.StartTime = time.Now()
-
-			if moveTime != 0 {
-				info.TimeSet = true
-				info.StopTime = moveTime
-			}
-
-			// board.SearchPosition(pos, info)
-			engineMove, _, _ := uct.GetEngineMoveFast(pos, 10000, info)
-			fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
-			pos.MakeMove(engineMove)
-			fmt.Println(pos)
-
-			if playout == true {
-				continue
-			}
-		}
-
 		command = value
 		if len(command) < 2 {
 			continue
@@ -73,7 +68,6 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 		}
 
 		if strings.Contains(command, "setboard") {
-			engineSide = board.Both
 			startStr := "setboard "
 			fen := board.RemoveStringToTheLeftOfMarker(command, startStr)
 			pos.ParseFen(fen)
@@ -91,7 +85,26 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 		}
 
 		if strings.Contains(command, "playout") {
-			playout = true
+			for !runEngine(pos, info, moveTime) {
+				winner := ""
+				switch pos.GetResult(pos.PlayerJustMoved) {
+				case board.Win:
+					if pos.PlayerJustMoved == board.White {
+						winner = "White wins!"
+					} else {
+						winner = "Black wins!"
+					}
+				case board.Loss:
+					if pos.PlayerJustMoved == board.White {
+						winner = "Black wins!"
+					} else {
+						winner = "White wins!"
+					}
+				default:
+					winner = "Draw"
+				}
+				fmt.Printf("Game over: %s\n", winner)
+			}
 			continue
 		}
 
@@ -121,7 +134,10 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 		}
 
 		if strings.Contains(command, "force") {
-			engineSide = board.Both
+			res := runEngine(pos, info, moveTime)
+			if res == true {
+				fmt.Println("Game is over")
+			}
 			continue
 		}
 
@@ -153,13 +169,15 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 		}
 
 		if strings.Contains(command, "new") {
-			engineSide = board.Black
 			pos.ParseFen(board.StartFen)
 			continue
 		}
 
 		if strings.Contains(command, "go") {
-			engineSide = pos.Side
+			res := runEngine(pos, info, moveTime)
+			if res == true {
+				fmt.Println("Game is over")
+			}
 			continue
 		}
 

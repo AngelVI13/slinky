@@ -46,7 +46,7 @@ func showSqAtBySide(side int, pos *board.ChessBoard) {
 
 }
 
-func normalMode(board_ *board.ChessBoard, info *board.SearchInfo) {
+func normalMode(boardState *board.ChessBoard, info *board.SearchInfo) {
 	line := ""
 	fmt.Printf("Welcome to Slinky! Type 'slinky' for console mode...\n")
 
@@ -57,13 +57,13 @@ func normalMode(board_ *board.ChessBoard, info *board.SearchInfo) {
 		}
 
 		if strings.Contains(line, "uci") {
-			utils.UciLoop(board_, info)
+			utils.UciLoop(boardState, info)
 			if info.Quit == true {
 				break
 			}
 			continue
 		} else if strings.Contains(line, "slinky") {
-			utils.ConsoleLoop(board_, info)
+			utils.ConsoleLoop(boardState, info)
 			if info.Quit == true {
 				break
 			}
@@ -77,7 +77,7 @@ func normalMode(board_ *board.ChessBoard, info *board.SearchInfo) {
 func main() {
 	board.AllInit()
 
-	board_ := board.CreateBoard()
+	boardState := board.CreateBoard()
 	var info board.SearchInfo
 
 	args := os.Args[1:]  // args excluding program name
@@ -86,9 +86,9 @@ func main() {
 	argCommands := strings.Split(argStr, ",")
 
 	if len(args) == 0 {
-		normalMode(&board_, &info)
+		normalMode(&boardState, &info)
 	} else {
-		utils.CommandLoop(&board_, &info, argCommands)
+		utils.CommandLoop(&boardState, &info, argCommands)
 	}
 
 }
