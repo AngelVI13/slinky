@@ -36,11 +36,6 @@ func CreateBoard() ChessBoard {
 	}
 }
 
-// CreateNewBoard returns a new instance of a board with default values
-// func CreateNewBoard() TicTacToe {
-// 	return TicTacToe { PlayerJustMoved: PlayerO, resultLines: getResultLines() }
-// }
-
 // Reset resets a given board
 func (pos *ChessBoard) Reset() {
 	// Set all board positions to OffBoard

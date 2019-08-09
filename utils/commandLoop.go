@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"../board"
+	"../uct"
 	"fmt"
-	"local/slinky/board"
-	"local/slinky/uct"
 	"strconv"
 	"strings"
 	"time"

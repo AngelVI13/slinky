@@ -4,7 +4,7 @@ import "fmt"
 import "sort"
 import "time"
 import "math/rand"
-import "local/slinky/board"
+import "../board"
 import "github.com/jinzhu/copier"
 
 type rankedMove struct {

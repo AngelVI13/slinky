@@ -63,17 +63,9 @@ const (
 	Both
 )
 
-// Player type to indicate a player -> White, Black, NoPlayer
-type Player int8
-// Defines for MC simulation
-const (
-	PlayerWhite Player = 1
-	PlayerBlack Player = -1
-	NoPlayer    Player = 0
-)
-
 // Result type indicates a predefined game result value used for MCTS (UCT) algorithm
 type Result float64
+
 const (
 	// NoWinner value to indicate no winner
 	NoWinner Result = -1.0
@@ -197,7 +189,7 @@ var Sq64ToSq120 [InnerSquareNum]int
 
 // FileRankToSquare converts give file and rank to a square index
 func FileRankToSquare(file, rank int) (square int) {
-	return ((21 + file) + (rank * 10))
+	return (21 + file) + (rank * 10)
 }
 
 // PieceKeys hashkeys for each piece for each possible position for the key
@@ -240,22 +232,6 @@ var FileNotationMap = map[string]int{
 	"f": FileF,
 	"g": FileG,
 	"h": FileH,
-}
-
-// PieceCharMap maps piece notations (i.e. 'p', 'N') to piece values (i.e. 'BlackPawn', 'WhiteKnight')
-var PieceCharMap = map[int]string{
-	BlackPawn:   "p",
-	BlackRook:   "r",
-	BlackKnight: "n",
-	BlackBishop: "b",
-	BlackKing:   "k",
-	BlackQueen:  "q",
-	WhitePawn:   "P",
-	WhiteRook:   "R",
-	WhiteKnight: "N",
-	WhiteBishop: "B",
-	WhiteKing:   "K",
-	WhiteQueen:  "Q",
 }
 
 // FilesBoard an array that returns which file a particular square is on
@@ -302,10 +278,6 @@ const (
 	MoveFlagPawnStart int = 0x80000
 	// MoveFlagCastle move flag that denotes if move was castling
 	MoveFlagCastle int = 0x1000000
-	// MoveFlagCapture move flag that denotes if move was capture without saying what the capture was (checks capture & enpas squares)
-	MoveFlagCapture int = 0x7C000
-	// MoveFlagPromotion move flag that denotes if move was promotion without saying what the promotion was
-	MoveFlagPromotion int = 0xF00000
 )
 
 const (
@@ -354,12 +326,6 @@ var PieceChar = ".PNBRQKpnbrqk"
 
 // SideChar string with side characters
 var SideChar = "wb-"
-
-// RankChar string with rank characters
-var RankChar = "12345678"
-
-// FileChar string with file characters
-var FileChar = "abcdefgh"
 
 // PieceColour A map used to identify a piece's colour
 var PieceColour = map[int]int{
@@ -460,23 +426,6 @@ var IsPiecePawn = map[int]bool{
 	BlackBishop: false,
 	BlackRook:   false,
 	BlackQueen:  false,
-	BlackKing:   false,
-}
-
-// PieceSlides holds information if a given piece slides
-var PieceSlides = map[int]bool{
-	Empty:       false,
-	WhitePawn:   false,
-	WhiteKnight: false,
-	WhiteBishop: true,
-	WhiteRook:   true,
-	WhiteQueen:  true,
-	WhiteKing:   false,
-	BlackPawn:   false,
-	BlackKnight: false,
-	BlackBishop: true,
-	BlackRook:   true,
-	BlackQueen:  true,
 	BlackKing:   false,
 }
 

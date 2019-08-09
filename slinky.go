@@ -1,9 +1,9 @@
 package main
 
 import (
+	"./board"
+	"./utils"
 	"fmt"
-	board "local/slinky/board"
-	utils "local/slinky/utils"
 	"os"
 	"strings"
 )
