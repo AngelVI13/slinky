@@ -2,10 +2,10 @@ package board
 
 import (
 	"bufio"
-	"log"
-	"os"
 	"fmt"
+	"log"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 )
@@ -19,7 +19,11 @@ func ScanFile(filename string) ([]string, error) {
 		log.Printf("open file error: %v", err)
 		return lines, err
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			panic("Couldn't close file")
+		}
+	}()
 
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
@@ -33,7 +37,6 @@ func ScanFile(filename string) ([]string, error) {
 
 	return lines, nil
 }
-
 
 // GetBookMove returns a move from the opening book
 func GetBookMove(pos *ChessBoard) int {
@@ -100,7 +103,7 @@ func RemoveStringToTheRightOfMarker(s, marker string) (result string) {
 
 	// markerIdx = markerIdx + len(marker)
 
-	textForRemoval := s[markerIdx:len(s)]
+	textForRemoval := s[markerIdx:]
 	resultStr := strings.Replace(s, textForRemoval, "", -1)
 	return resultStr
 }

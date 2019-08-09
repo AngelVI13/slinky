@@ -4,7 +4,7 @@ import "fmt"
 import "sort"
 import "time"
 import "math/rand"
-import board "local/slinky/board"
+import "local/slinky/board"
 import "github.com/jinzhu/copier"
 
 type rankedMove struct {
@@ -13,13 +13,13 @@ type rankedMove struct {
 }
 
 type moveScore struct {
-	move   int
-	wins   float64
-	visits float64
+	move             int
+	wins             float64
+	visits           float64
 	totalSimulations int
 }
 
-func uct(rootstate board.Board, originMove int, itermax int, timeData timeInfo) moveScore {
+func uct(rootstate board.Board, originMove int, timeData timeInfo) moveScore {
 	rootstate.MakeMove(originMove)
 	/* Check for immediate result
 	It is possible the game is already over by this point
@@ -101,25 +101,24 @@ func uct(rootstate board.Board, originMove int, itermax int, timeData timeInfo) 
 
 type timeInfo struct {
 	startTime time.Time
-	stopTime int
+	stopTime  int
 	isTimeSet bool
 }
 
 type uctArg struct {
-	state       board.Board
-	move        int
-	simulations int
-	timeData    timeInfo
+	state    board.Board
+	move     int
+	timeData timeInfo
 }
 
 func worker(jobs <-chan uctArg, results chan<- moveScore) {
 	for uctArguments := range jobs {
-		results <- uct(uctArguments.state, uctArguments.move, uctArguments.simulations, uctArguments.timeData)
+		results <- uct(uctArguments.state, uctArguments.move, uctArguments.timeData)
 	}
 }
 
 // GetEngineMoveFast returns the best move found by the UCT (computed in parallel)
-func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInfo) (move int, score float64, totalSim int) {
+func GetEngineMoveFast(state board.Board, info *board.SearchInfo) (move int, score float64, totalSim int) {
 	availableMoves := state.GetMoves()
 	numMoves := len(availableMoves)
 
@@ -130,8 +129,6 @@ func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInf
 		return availableMoves[0], 0.5, 0
 	}
 
-	simPerMove := simulations / numMoves
-
 	// create channels to share data between goroutines
 	jobs := make(chan uctArg, numMoves)
 	results := make(chan moveScore, numMoves)
@@ -141,19 +138,20 @@ func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInf
 		go worker(jobs, results)
 	}
 
-	timeData := timeInfo { startTime: info.StartTime, stopTime: info.StopTime, isTimeSet: info.TimeSet}
+	timeData := timeInfo{startTime: info.StartTime, stopTime: info.StopTime, isTimeSet: info.TimeSet}
 	bestMove := rankedMove{move: -1, score: 1.1}
 
 	for _, move := range availableMoves {
 		// create a copy of the board in order to be sent to the goroutine
 		b := board.ChessBoard{}
-		copier.Copy(&b, state)
+		if err := copier.Copy(&b, state); err != nil {
+			panic("Cannot copy board state")
+		}
 
 		jobs <- uctArg{
-			state:       &b,
-			move:        move,
-			simulations: simPerMove,
-			timeData:    timeData,
+			state:    &b,
+			move:     move,
+			timeData: timeData,
 		}
 	}
 
@@ -167,7 +165,7 @@ func GetEngineMoveFast(state board.Board, simulations int, info *board.SearchInf
 		scoreValue = mScore.wins / mScore.visits
 
 		fmt.Printf("Move: %s: %.3f -> %.1f / %.0f (%d)\n",
-					board.PrintMove(mScore.move), scoreValue, mScore.wins, mScore.visits, mScore.totalSimulations)
+			board.PrintMove(mScore.move), scoreValue, mScore.wins, mScore.visits, mScore.totalSimulations)
 		// here the move_score refers to the best enemy reply
 		// therefore we want to minimize that i.e. chose the move
 		// which leads to the lowest scored best enemy reply

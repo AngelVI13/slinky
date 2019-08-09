@@ -140,7 +140,7 @@ func (pos *ChessBoard) ParseFen(fen string) {
 		panic(fmt.Sprintf("Unknown side to move: %s", newChar))
 	}
 
-	// move character pointer 2 characters further and it should now point to the start of the castling permissions part of FEN
+	// move char pointer 2 chars further and it should now point to the start of the castling permissions part of FEN
 	char += 2
 
 	// Iterate over the next 4 chars - they show if white is allowed to castle king or quenside and the same for black
@@ -214,7 +214,8 @@ func Abs(x int) int {
 
 // MaterialDraw Determines if given the available pieces the position is a material draw, based on sjeng
 func (pos *ChessBoard) MaterialDraw() bool {
-	if pos.pieceNum[WhiteRook] == 0 && pos.pieceNum[BlackRook] == 0 && pos.pieceNum[WhiteQueen] == 0 && pos.pieceNum[BlackQueen] == 0 {
+	if pos.pieceNum[WhiteRook] == 0 && pos.pieceNum[BlackRook] == 0 &&
+		pos.pieceNum[WhiteQueen] == 0 && pos.pieceNum[BlackQueen] == 0 {
 		if pos.pieceNum[BlackBishop] == 0 && pos.pieceNum[WhiteBishop] == 0 {
 			if pos.pieceNum[WhiteKnight] < 3 && pos.pieceNum[BlackKnight] < 3 {
 				return true
@@ -223,22 +224,29 @@ func (pos *ChessBoard) MaterialDraw() bool {
 			if Abs(pos.pieceNum[WhiteBishop]-pos.pieceNum[BlackBishop]) < 2 {
 				return true
 			}
-		} else if (pos.pieceNum[WhiteKnight] < 3 && pos.pieceNum[WhiteBishop] == 0) || (pos.pieceNum[BlackBishop] == 1 && pos.pieceNum[WhiteKnight] == 0) {
-			if (pos.pieceNum[BlackKnight] < 3 && pos.pieceNum[BlackBishop] == 0) || (pos.pieceNum[BlackBishop] == 1 && pos.pieceNum[BlackKnight] == 0) {
+		} else if (pos.pieceNum[WhiteKnight] < 3 && pos.pieceNum[WhiteBishop] == 0) ||
+			(pos.pieceNum[BlackBishop] == 1 && pos.pieceNum[WhiteKnight] == 0) {
+			if (pos.pieceNum[BlackKnight] < 3 && pos.pieceNum[BlackBishop] == 0) ||
+				(pos.pieceNum[BlackBishop] == 1 && pos.pieceNum[BlackKnight] == 0) {
 				return true
 			}
 		}
 	} else if pos.pieceNum[WhiteQueen] == 0 && pos.pieceNum[BlackQueen] == 0 {
 		if pos.pieceNum[WhiteRook] == 1 && pos.pieceNum[BlackRook] == 1 {
-			if (pos.pieceNum[WhiteKnight]+pos.pieceNum[WhiteBishop]) < 2 && (pos.pieceNum[BlackKnight]+pos.pieceNum[BlackBishop]) < 2 {
+			if (pos.pieceNum[WhiteKnight]+pos.pieceNum[WhiteBishop]) < 2 &&
+				(pos.pieceNum[BlackKnight]+pos.pieceNum[BlackBishop]) < 2 {
 				return true
 			}
 		} else if pos.pieceNum[WhiteRook] == 1 && pos.pieceNum[BlackRook] == 0 {
-			if (pos.pieceNum[WhiteKnight]+pos.pieceNum[WhiteBishop]) == 0 && ((pos.pieceNum[BlackKnight]+pos.pieceNum[BlackBishop]) == 1 || (pos.pieceNum[BlackKnight]+pos.pieceNum[BlackBishop]) == 2) {
+			if (pos.pieceNum[WhiteKnight]+pos.pieceNum[WhiteBishop]) == 0 &&
+				((pos.pieceNum[BlackKnight]+pos.pieceNum[BlackBishop]) == 1 ||
+					(pos.pieceNum[BlackKnight]+pos.pieceNum[BlackBishop]) == 2) {
 				return true
 			}
 		} else if pos.pieceNum[WhiteRook] == 0 && pos.pieceNum[BlackRook] == 1 {
-			if (pos.pieceNum[BlackKnight]+pos.pieceNum[BlackBishop]) == 0 && ((pos.pieceNum[WhiteKnight]+pos.pieceNum[WhiteBishop]) == 1 || (pos.pieceNum[WhiteKnight]+pos.pieceNum[WhiteBishop]) == 2) {
+			if (pos.pieceNum[BlackKnight]+pos.pieceNum[BlackBishop]) == 0 &&
+				((pos.pieceNum[WhiteKnight]+pos.pieceNum[WhiteBishop]) == 1 ||
+					(pos.pieceNum[WhiteKnight]+pos.pieceNum[WhiteBishop]) == 2) {
 				return true
 			}
 		}

@@ -2,8 +2,8 @@ package utils
 
 import (
 	"fmt"
-	board "local/slinky/board"
-	uct "local/slinky/uct"
+	"local/slinky/board"
+	"local/slinky/uct"
 	"strconv"
 	"strings"
 	"time"
@@ -78,7 +78,7 @@ func ParseGo(line string, info *board.SearchInfo, pos *board.ChessBoard) {
 		timeInt /= movesToGo
 		// to be on the safe side we remove 50ms from this value
 		timeInt -= 50
-		stopTimeInSeconds := (timeInt + inc) // find stop time in miliseconds
+		stopTimeInSeconds := timeInt + inc // find stop time in miliseconds
 		info.StopTime = stopTimeInSeconds
 	}
 
@@ -108,7 +108,7 @@ func SearchPosition(pos *board.ChessBoard, info *board.SearchInfo) int {
 	// do normal move search
 	bestScore := 0.0
 	nodes := 0
-	bestMove, bestScore, nodes = uct.GetEngineMoveFast(pos, 0, info)
+	bestMove, bestScore, nodes = uct.GetEngineMoveFast(pos, info)
 
 	// scale from percentage to centipawn loss/gain
 	// here is bestScore from point of view of enemy ?
@@ -183,11 +183,6 @@ func ParsePosition(lineIn string, pos *board.ChessBoard) {
 	}
 	fmt.Println(pos)
 }
-
-const (
-	// InputBuffer max characters received
-	InputBuffer int = 400 * 6
-)
 
 // UciLoop main UCI loop
 func UciLoop(pos *board.ChessBoard, info *board.SearchInfo) {

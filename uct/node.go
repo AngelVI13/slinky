@@ -1,7 +1,7 @@
 package uct
 
 import "fmt"
-import board "local/slinky/board"
+import "local/slinky/board"
 import "math"
 
 // Node structure to hold information about each node in the MCTS

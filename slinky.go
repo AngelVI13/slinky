@@ -4,8 +4,8 @@ import (
 	"fmt"
 	board "local/slinky/board"
 	utils "local/slinky/utils"
-	"strings"
 	"os"
+	"strings"
 )
 
 const (
@@ -27,24 +27,6 @@ const (
 	fen15    string = "2rr3k/pp3pp1/1nnqbN1p/3pN3/2pP4/2P3Q1/PPB4P/R4RK1 w - -"
 	fen16    string = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1"
 )
-
-func showSqAtBySide(side int, pos *board.ChessBoard) {
-
-	fmt.Printf("\n\nSquares attacked by:%c\n", board.SideChar[side])
-	for rank := board.Rank8; rank >= board.Rank1; rank-- {
-		for file := board.FileA; file <= board.FileH; file++ {
-			sq := board.FileRankToSquare(file, rank)
-			if pos.IsSquareAttacked(sq, side) {
-				fmt.Printf("X")
-			} else {
-				fmt.Printf("-")
-			}
-		}
-		fmt.Printf("\n")
-	}
-	fmt.Printf("\n\n")
-
-}
 
 func normalMode(boardState *board.ChessBoard, info *board.SearchInfo) {
 	line := ""
@@ -80,7 +62,7 @@ func main() {
 	boardState := board.CreateBoard()
 	var info board.SearchInfo
 
-	args := os.Args[1:]  // args excluding program name
+	args := os.Args[1:] // args excluding program name
 	argStr := strings.Join(args, " ")
 	fmt.Println(argStr)
 	argCommands := strings.Split(argStr, ",")

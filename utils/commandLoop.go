@@ -2,8 +2,8 @@ package utils
 
 import (
 	"fmt"
-	board "local/slinky/board"
-	uct "local/slinky/uct"
+	"local/slinky/board"
+	"local/slinky/uct"
 	"strconv"
 	"strings"
 	"time"
@@ -19,7 +19,7 @@ func runEngine(pos *board.ChessBoard, info *board.SearchInfo, moveTime int) (gam
 		}
 
 		// board.SearchPosition(pos, info)
-		engineMove, _, _ := uct.GetEngineMoveFast(pos, 10000, info)
+		engineMove, _, _ := uct.GetEngineMoveFast(pos, info)
 		fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
 		pos.MakeMove(engineMove)
 		fmt.Println(pos)
