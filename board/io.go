@@ -4,6 +4,23 @@ import (
 	"fmt"
 )
 
+// todo rename methods -> they dont print but return a string
+
+// PrintSquare get algebraic notation of square i.e. b2, a6 from array index
+func PrintSquare(sq int) string {
+	file := FilesBoard[sq]
+	rank := RanksBoard[sq]
+
+	// "a"[0] -> returns the byte value of the char 'a' -> convert to int to get ascii value
+	// then add the file/rank value to it and convert back to string
+	// therefore this automatically translates the files from 0-7 to a-h
+	fileStr := string(int("a"[0]) + file)
+	rankStr := string(int("1"[0]) + rank)
+
+	squareStr := fileStr + rankStr
+	return squareStr
+}
+
 // PrintMove prints move in algebraic notation
 func PrintMove(move int) string {
 	fileFrom := FilesBoard[FromSq(move)]

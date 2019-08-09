@@ -62,6 +62,7 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 			fmt.Printf("showline - show current move line so far\n")
 			fmt.Printf("getmoves - show all moves")
 			fmt.Printf("playout - force engine to play position till end")
+			fmt.Printf("getfen - print fen of current position")
 			fmt.Printf("** note ** - to reset time and depth, set to 0\n")
 			fmt.Printf("enter moves using b7b8q notation\n\n\n")
 			continue
@@ -115,6 +116,11 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 				fmt.Printf("%s, ", board.PrintMove(moves[i]))
 			}
 			fmt.Printf("\n")
+			continue
+		}
+
+		if strings.Contains(command, "getfen") {
+			fmt.Println(pos.GenerateFen())
 			continue
 		}
 

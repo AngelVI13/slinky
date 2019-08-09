@@ -65,7 +65,7 @@ func main() {
 	args := os.Args[1:] // args excluding program name
 	argStr := strings.Join(args, " ")
 	fmt.Println(argStr)
-	argCommands := strings.Split(argStr, ",")
+	argCommands := strings.Split(argStr, ", ")
 
 	if len(args) == 0 {
 		normalMode(&boardState, &info)

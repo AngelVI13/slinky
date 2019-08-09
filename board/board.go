@@ -1,7 +1,6 @@
 package board
 
 import "fmt"
-import "strconv"
 
 // Board general board interface that supports MCTS (UCT) algorithm
 type Board interface {
@@ -74,115 +73,6 @@ func (pos *ChessBoard) GetPlayerJustMoved() int {
 	return pos.PlayerJustMoved
 }
 
-// ParseFen parse fen position string and setup a position accordingly
-// TODO Split into smaller parts
-func (pos *ChessBoard) ParseFen(fen string) {
-	rank := Rank8 // we start from rank 8 since the notation starts from rank 8
-	file := FileA
-	piece := 0
-	count := 0 // number of empty squares declared inside fen string
-	sq64 := 0
-	sq120 := 0
-
-	pos.Reset()
-	char := 0
-
-	for (rank >= Rank1) && char < len(fen) {
-		count = 1
-		switch t := string(fen[char]); t {
-		case "p", "r", "n", "b", "k", "q", "P", "R", "N", "B", "K", "Q":
-			// If we have a piece related char -> set the piece to corresponding value, i.e p -> BlackPawn
-			piece = PieceNotationMap[t]
-		case "1", "2", "3", "4", "5", "6", "7", "8":
-			// otherwise it must be a count of a number of empty squares
-			piece = Empty
-			count, _ = strconv.Atoi(t) // get number of empty squares and store in count
-		case "/", " ":
-			// if we have / or space then we are either at the end of the rank or at the end of the piece list
-			// -> reset variables and continue the while loop
-			rank--
-			file = FileA
-			char++
-			continue
-		default:
-			panic("FEN error")
-		}
-
-		// This loop, skips over all empty positions in a rank
-		// When it comes to a piece that is different that "1"-"8" it places it on the corresponding square
-		for i := 0; i < count; i++ {
-			sq64 = rank*8 + file
-			sq120 = Sq64ToSq120[sq64]
-			if piece != Empty {
-				pos.Pieces[sq120] = piece
-			}
-			file++
-		}
-		char++
-	}
-
-	newChar := ""
-	// newChar should be set to the side to move part of the FEN string here
-	newChar = string(fen[char])
-
-	if newChar == "w" {
-		pos.Side = White
-		pos.PlayerJustMoved = Black
-	} else if newChar == "b" {
-		pos.Side = Black
-		pos.PlayerJustMoved = White
-	} else {
-		panic(fmt.Sprintf("Unknown side to move: %s", newChar))
-	}
-
-	// move char pointer 2 chars further and it should now point to the start of the castling permissions part of FEN
-	char += 2
-
-	// Iterate over the next 4 chars - they show if white is allowed to castle king or quenside and the same for black
-	for i := 0; i < 4; i++ {
-		newChar = string(fen[char])
-		if newChar == " " {
-			// when we hit a space, it means there are no more castling permissions => break
-			break
-		}
-		switch newChar { // Depending on the char, enable the corresponding castling permission related bit
-		case "K":
-			pos.castlePerm |= WhiteKingCastling
-		case "Q":
-			pos.castlePerm |= WhiteQueenCastling
-		case "k":
-			pos.castlePerm |= BlackKingCastling
-		case "q":
-			pos.castlePerm |= BlackQueenCastling
-		default:
-			break
-		}
-		char++
-	}
-
-	// // AssertTrue(pos.castlePerm >= 0 && pos.castlePerm <= 15)
-	// move to the en passant square related part of FEN
-	char++
-	newChar = string(fen[char])
-
-	if newChar != "-" {
-		file := FileNotationMap[newChar]
-		char++
-		rank, _ := strconv.Atoi(string(fen[char])) // get rank number
-		rank--                                     // decrement rank to match our indexes, i.e. Rank1 == 0
-
-		if (file < FileA || file > FileH) || (rank < Rank1 || rank > Rank8) {
-			panic(fmt.Sprintf("File or rank out of bounds: file(%d) rank(%d)", file, rank))
-		}
-
-		pos.enPas = FileRankToSquare(file, rank)
-	}
-
-	pos.posKey = GeneratePosKey(pos) // generate pos key for new position
-
-	pos.UpdateListsMaterial()
-}
-
 // UpdateListsMaterial updates all material related piece lists
 func (pos *ChessBoard) UpdateListsMaterial() {
 	for index := 0; index < BoardSquareNum; index++ {
@@ -199,8 +89,8 @@ func (pos *ChessBoard) UpdateListsMaterial() {
 	}
 }
 
-// Abs local method to compute absolute value of int without needing to convert to float
-func Abs(x int) int {
+// abs local method to compute absolute value of int without needing to convert to float
+func abs(x int) int {
 	if x < 0 {
 		return -x
 	}
@@ -216,7 +106,7 @@ func (pos *ChessBoard) MaterialDraw() bool {
 				return true
 			}
 		} else if pos.pieceNum[WhiteKnight] == 0 && pos.pieceNum[BlackKnight] == 0 {
-			if Abs(pos.pieceNum[WhiteBishop]-pos.pieceNum[BlackBishop]) < 2 {
+			if abs(pos.pieceNum[WhiteBishop]-pos.pieceNum[BlackBishop]) < 2 {
 				return true
 			}
 		} else if (pos.pieceNum[WhiteKnight] < 3 && pos.pieceNum[WhiteBishop] == 0) ||
@@ -257,7 +147,7 @@ func (pos *ChessBoard) String() string {
 		for file := FileA; file <= FileH; file++ {
 			sq := FileRankToSquare(file, rank)
 			piece := pos.Pieces[sq]
-			line += fmt.Sprintf("%3c", PieceChar[piece])
+			line += fmt.Sprintf("%3s", PieceChar[piece])
 		}
 		line += fmt.Sprintf("\n")
 	}
@@ -294,61 +184,6 @@ func (pos *ChessBoard) String() string {
 	line += fmt.Sprintf("castle:%s%s%s%s\n", wKCA, wQCA, bKCA, bQCA)
 	line += fmt.Sprintf("PosKey:%X\n", pos.posKey)
 	return line
-}
-
-// ParseMove parses user move and returns the MOVE int value from the GeneratedMoves for the
-// position, that matches the moveStr input. For example if moveStr = 'a2a3'
-// loops over all possible moves for the position, finds that move int i.e. 1451231 and returns it
-func (pos *ChessBoard) ParseMove(moveStr string) (move int) {
-	// THIS COULD BE DOING BYTE COMPARISON INSTEAD OF INT COMPARISON !!!!!
-	// check if files for 'from' and 'to' squares are valid i.e. between 1-8
-	if moveStr[1] > "8"[0] || moveStr[1] < "1"[0] {
-		return NoMove
-	}
-
-	if moveStr[3] > "8"[0] || moveStr[3] < "1"[0] {
-		return NoMove
-	}
-
-	// check if ranks for 'from' and 'to' squares are valid i.e. between a-h
-	if moveStr[0] > "h"[0] || moveStr[0] < "a"[0] {
-		return NoMove
-	}
-
-	if moveStr[2] > "h"[0] || moveStr[2] < "a"[0] {
-		return NoMove
-	}
-
-	from := FileRankToSquare(int(moveStr[0]-"a"[0]), int(moveStr[1]-"1"[0]))
-	to := FileRankToSquare(int(moveStr[2]-"a"[0]), int(moveStr[3]-"1"[0]))
-
-	// fmt.Printf("Move string: %s, from: %d to: %d\n", moveStr, from, to)
-
-	var moveList MoveList
-	pos.GenerateAllMoves(&moveList)
-
-	for moveNum := 0; moveNum < moveList.Count; moveNum++ {
-		move := moveList.Moves[moveNum]
-		if FromSq(move) == from && ToSq(move) == to {
-			promPiece := Promoted(move)
-			if promPiece != Empty {
-				if IsPieceRookQueen[promPiece] && !IsPieceBishopQueen[promPiece] && moveStr[4] == "r"[0] {
-					return move
-				} else if !IsPieceRookQueen[promPiece] && IsPieceBishopQueen[promPiece] && moveStr[4] == "b"[0] {
-					return move
-				} else if IsPieceRookQueen[promPiece] && IsPieceBishopQueen[promPiece] && moveStr[4] == "q"[0] {
-					return move
-				} else if IsPieceKnight[promPiece] && moveStr[4] == "n"[0] {
-					return move
-				}
-				continue
-			}
-			// must not be a promotion -> return move
-			return move
-		}
-	}
-
-	return NoMove
 }
 
 // GetThreeFoldRepetitionCount Detects how many repetitions for a given position
@@ -424,5 +259,4 @@ func (pos *ChessBoard) GetResult(playerJM int) Result {
 	// not in check but no legal moves left -> stalemate
 	// fmt.Printf("\n1/2-1/2 {stalemate (claimed by Slinky)}\n")
 	return Draw
-
 }

@@ -7,6 +7,8 @@ const (
 	Name = "Slinky 1.0"
 	// BoardSquareNum is the total number of squares in the board representation
 	BoardSquareNum = 120
+	// RowSize number of rows/cols on the board
+	RowSize = 8
 	// InnerSquareNum is the number of squares for a normal chess board i.e. 8x8
 	InnerSquareNum = 64
 	// BookFile book filename
@@ -321,8 +323,22 @@ const (
 	ConsoleMode
 )
 
-// PieceChar string with piece characters
-var PieceChar = ".PNBRQKpnbrqk"
+// PieceChar map from piece value to string representation
+var PieceChar = map[int]string{
+	Empty:       ".",
+	WhitePawn:   "P",
+	WhiteKnight: "N",
+	WhiteBishop: "B",
+	WhiteRook:   "R",
+	WhiteQueen:  "Q",
+	WhiteKing:   "K",
+	BlackPawn:   "p",
+	BlackKnight: "n",
+	BlackBishop: "b",
+	BlackRook:   "r",
+	BlackQueen:  "q",
+	BlackKing:   "k",
+}
 
 // SideChar string with side characters
 var SideChar = "wb-"
