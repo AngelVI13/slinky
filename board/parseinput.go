@@ -205,6 +205,7 @@ func (pos *ChessBoard) GenerateFen() (fen string) {
 	for idx := range fenRows {
 		fen += fmt.Sprintf("%s/", fenRows[rowsLength-idx-1])
 	}
+	// todo remoeve extra / at the end of FEN !
 	// ------------
 
 	side := "w"
