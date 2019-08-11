@@ -181,7 +181,7 @@ func ParsePosition(lineIn string, pos *board.ChessBoard) {
 			pos.MakeMove(move)
 		}
 	}
-	fmt.Println(pos)
+	//fmt.Println(pos)
 }
 
 // UciLoop main UCI loop

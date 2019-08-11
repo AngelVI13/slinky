@@ -184,6 +184,9 @@ func (pos *ChessBoard) String() string {
 
 	line += fmt.Sprintf("castle:%s%s%s%s\n", wKCA, wQCA, bKCA, bQCA)
 	line += fmt.Sprintf("PosKey:%X\n", pos.posKey)
+	line += fmt.Sprintf("FEN: %s\n", pos.GenerateFen())
+	line += fmt.Sprintf("KingSq: %s\n", PrintMove(pos.kingSquare[pos.Side]))
+	line += fmt.Sprintf("InCheck: %t\n", pos.IsSquareAttacked(pos.kingSquare[pos.Side], pos.Side^1))
 	return line
 }
 

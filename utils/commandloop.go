@@ -23,7 +23,6 @@ func runEngine(pos *board.ChessBoard, info *board.SearchInfo, moveTime int) (gam
 		fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
 		pos.MakeMove(engineMove)
 		fmt.Println(pos)
-		fmt.Println(fmt.Sprintf("FEN: %s\n", pos.GenerateFen()))
 		return false
 	}
 	return true
@@ -194,5 +193,6 @@ func CommandLoop(pos *board.ChessBoard, info *board.SearchInfo, cmds []string) {
 			continue
 		}
 		pos.MakeMove(move)
+		fmt.Println(pos)
 	}
 }
