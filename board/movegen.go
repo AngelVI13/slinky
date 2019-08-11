@@ -12,8 +12,6 @@ func GetMoveInt(fromSq, toSq, capturePiece, promotionPiece, flag int) int {
 	return fromSq | (toSq << 7) | (capturePiece << 14) | (promotionPiece << 20) | flag
 }
 
-// TODO: COMBINE AND PARAMETERIZE THE CODE BELOW for all moves GEN !!!!!!!!!!
-
 // addMove adds move to MoveList
 func (pos *ChessBoard) addMove(move int, moveList *MoveList) {
 	moveList.Moves[moveList.Count] = move

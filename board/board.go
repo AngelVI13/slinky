@@ -140,6 +140,7 @@ func (pos *ChessBoard) MaterialDraw() bool {
 }
 
 func (pos *ChessBoard) String() string {
+	// todo add print of fen and all GUI useful info here
 	line := fmt.Sprintf("\nGame Board:\n\n")
 
 	for rank := Rank8; rank >= Rank1; rank-- {
