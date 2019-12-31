@@ -129,6 +129,10 @@ func GetEngineMoveFast(state board.Board, info *board.SearchInfo) (move int, sco
 		return availableMoves[0], 0.5, 0
 	}
 
+	// todo return whole node from mcts and then send it down on the jobs for the next run
+	// todo send a cut-off of depth -> even if game is not over - evaluate position and return evaluation as if it's a proper result
+	// todo make sure to take care of quescent position i.e. do not stop immediatelly but on a quiet position
+	// todo add move ordering i.e. more promissing moves might get more iterations ??
 	// create channels to share data between goroutines
 	jobs := make(chan uctArg, numMoves)
 	results := make(chan moveScore, numMoves)
