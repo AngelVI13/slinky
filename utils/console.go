@@ -11,7 +11,7 @@ import (
 
 // ConsoleLoop console loop for playing through the console
 func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
-	fmt.Printf("Welcome to Hugo In Console Mode!\n")
+	fmt.Printf("Welcome to Slinky In Console Mode!\n")
 	fmt.Printf("Type help for commands\n\n")
 
 	info.GameMode = board.ConsoleMode
