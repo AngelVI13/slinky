@@ -1,8 +1,10 @@
 package uct
 
-import "fmt"
-import "../board"
-import "math"
+import (
+	"fmt"
+	"math"
+	"slinky/board"
+)
 
 // Node structure to hold information about each node in the MCTS
 type Node struct {

@@ -1,11 +1,14 @@
 package uct
 
-import "fmt"
-import "sort"
-import "time"
-import "math/rand"
-import "../board"
-import "github.com/jinzhu/copier"
+import (
+	"fmt"
+	"math/rand"
+	"slinky/board"
+	"sort"
+	"time"
+
+	"github.com/jinzhu/copier"
+)
 
 type rankedMove struct {
 	move  int
