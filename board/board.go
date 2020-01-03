@@ -29,6 +29,7 @@ type ChessBoard struct {
 	PlayerJustMoved int // At the root pretend the player just moved is Black i.e. White has the first move
 }
 
+// CreateBoard creates a new board with default values: everything set to zero, player just moved - Black
 func CreateBoard() ChessBoard {
 	return ChessBoard{
 		PlayerJustMoved: Black,

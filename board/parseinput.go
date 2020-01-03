@@ -168,6 +168,7 @@ func (pos *ChessBoard) ParseFen(fen string) {
 	pos.UpdateListsMaterial()
 }
 
+// GenerateFen generates a fen from the given position
 func (pos *ChessBoard) GenerateFen() (fen string) {
 	emptyCount := 0
 	for idx, value := range pos.Pieces {
@@ -184,7 +185,7 @@ func (pos *ChessBoard) GenerateFen() (fen string) {
 		}
 
 		if value == Empty {
-			emptyCount += 1
+			emptyCount++
 		} else {
 			if emptyCount != 0 {
 				fen += strconv.Itoa(emptyCount)
