@@ -5,6 +5,9 @@ import (
 	"testing"
 )
 
+// TestIsSquareAttacked checks that after init and new game is started
+// for a provided move c2c4 the position is initialized correctly and KingSquares
+// are computed correctly
 func TestIsSquareAttacked(t *testing.T) {
 	// Setup
 	AllInit()

@@ -6,8 +6,6 @@ import (
 	"slinky/board"
 	"sort"
 	"time"
-
-	"github.com/jinzhu/copier"
 )
 
 type rankedMove struct {
@@ -15,23 +13,24 @@ type rankedMove struct {
 	score float64
 }
 
-type moveScore struct {
+type uctResult struct {
+	state            *board.ChessBoard
 	move             int
 	wins             float64
 	visits           float64
 	totalSimulations int
 }
 
-func uct(rootstate board.Board, originMove int, timeData timeInfo) moveScore {
+func uct(rootstate *board.ChessBoard, originMove int, timeData timeInfo) uctResult {
 	rootstate.MakeMove(originMove)
 	/* Check for immediate result
 	It is possible the game is already over by this point
 	in which the value of the move should be immediately computed and
 	put in the result from the view point of the enemy
 	since here moves are evaluated from that viewpoint */
-	result, mScore := isImmediateResult(rootstate, originMove)
-	if result == true {
-		return mScore
+	isResult, result := isImmediateResult(rootstate, originMove)
+	if isResult == true {
+		return result
 	}
 
 	rootnode := CreateRootNode(rootstate)
@@ -99,7 +98,7 @@ func uct(rootstate board.Board, originMove int, timeData timeInfo) moveScore {
 	})
 	// above we sort by descending order -> move with most visits is the first element
 	bestMove := rootnode.childNodes[0]
-	return moveScore{move: originMove, wins: bestMove.wins, visits: bestMove.visits, totalSimulations: simulations}
+	return uctResult{state: state, move: originMove, wins: bestMove.wins, visits: bestMove.visits, totalSimulations: simulations}
 }
 
 type timeInfo struct {
@@ -109,19 +108,20 @@ type timeInfo struct {
 }
 
 type uctArg struct {
-	state    board.Board
+	state    *board.ChessBoard
 	move     int
 	timeData timeInfo
 }
 
-func worker(jobs <-chan uctArg, results chan<- moveScore) {
+func worker(jobs <-chan uctArg, results chan<- uctResult) {
 	for uctArguments := range jobs {
 		results <- uct(uctArguments.state, uctArguments.move, uctArguments.timeData)
 	}
 }
 
+// todo need to return pointer to state!!!
 // GetEngineMoveFast returns the best move found by the UCT (computed in parallel)
-func GetEngineMoveFast(state board.Board, info *board.SearchInfo) (move int, score float64, totalSim int) {
+func GetEngineMoveFast(state *board.ChessBoard, info *board.SearchInfo) (move int, score float64, totalSim int) {
 	availableMoves := state.GetMoves()
 	numMoves := len(availableMoves)
 
@@ -138,7 +138,7 @@ func GetEngineMoveFast(state board.Board, info *board.SearchInfo) (move int, sco
 	// todo add move ordering i.e. more promissing moves might get more iterations ??
 	// create channels to share data between goroutines
 	jobs := make(chan uctArg, numMoves)
-	results := make(chan moveScore, numMoves)
+	results := make(chan uctResult, numMoves)
 
 	// spawn workers ready to process data
 	for _i := 0; _i < numMoves; _i++ {
@@ -150,10 +150,7 @@ func GetEngineMoveFast(state board.Board, info *board.SearchInfo) (move int, sco
 
 	for _, move := range availableMoves {
 		// create a copy of the board in order to be sent to the goroutine
-		b := board.ChessBoard{}
-		if err := copier.Copy(&b, state); err != nil {
-			panic("Cannot copy board state")
-		}
+		b := *state
 
 		jobs <- uctArg{
 			state:    &b,
@@ -164,43 +161,43 @@ func GetEngineMoveFast(state board.Board, info *board.SearchInfo) (move int, sco
 
 	close(jobs) // close jobs channel
 
-	var mScore moveScore
+	var result uctResult
 	var scoreValue float64
 	var totalSimulations int
 	for _i := 0; _i < numMoves; _i++ {
-		mScore = <-results
-		scoreValue = mScore.wins / mScore.visits
+		result = <-results
+		scoreValue = result.wins / result.visits
 
 		fmt.Printf("Move: %s: %.3f -> %.1f / %.0f (%d)\n",
-			board.PrintMove(mScore.move), scoreValue, mScore.wins, mScore.visits, mScore.totalSimulations)
+			board.PrintMove(result.move), scoreValue, result.wins, result.visits, result.totalSimulations)
 		// here the move_score refers to the best enemy reply
 		// therefore we want to minimize that i.e. chose the move
 		// which leads to the lowest scored best enemy reply
 		if scoreValue < bestMove.score {
 			bestMove.score = scoreValue
-			bestMove.move = mScore.move
+			bestMove.move = result.move
 		}
-		totalSimulations += mScore.totalSimulations
+		totalSimulations += result.totalSimulations
 	}
 	fmt.Printf("Total simulations done: %d\n", totalSimulations)
 
 	return bestMove.move, bestMove.score, totalSimulations
 }
 
-func isImmediateResult(state board.Board, move int) (result bool, score moveScore) {
+func isImmediateResult(state *board.ChessBoard, move int) (isResult bool, result uctResult) {
 	enemy := state.GetEnemy(state.GetPlayerJustMoved())
 	gameResult := state.GetResult(enemy)
 
 	if gameResult != board.NoWinner {
-		score = moveScore{move: move, wins: float64(gameResult), visits: 1.0}
-		result = true
+		result = uctResult{state: state, move: move, wins: float64(gameResult), visits: 1.0}
+		isResult = true
 	}
 
 	return
 }
 
 // GetEngineMove returns the best move found by the UCT
-// func GetEngineMove(state board.Board, simulations int) int {
+// func GetEngineMove(state board.ChessBoard, simulations int) int {
 // 	availableMoves := state.GetMoves()
 
 // 	if len(availableMoves) == 0 {

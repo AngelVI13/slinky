@@ -25,7 +25,7 @@ func (n *Node) Update(gameResult float64) {
 
 // AddChild adds child node from a given untried move under this node
 // note state here can be a pointer to struct
-func (n *Node) AddChild(move int, state board.Board) *Node {
+func (n *Node) AddChild(move int, state *board.ChessBoard) *Node {
 	node := Node{
 		move:            move,
 		parent:          n,
@@ -80,7 +80,7 @@ func (n *Node) SelectChild() *Node {
 }
 
 // CreateRootNode creates a root node for a given board state
-func CreateRootNode(state board.Board) Node {
+func CreateRootNode(state *board.ChessBoard) Node {
 	return Node{
 		move:            -1, // this is set to an invalid move
 		parent:          nil,

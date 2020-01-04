@@ -11,6 +11,7 @@ type Board interface {
 	GetPlayerJustMoved() int
 	GetEnemy(playerJM int) int
 	String() string
+	// GetCopy() Board
 }
 
 // ChessBoard structure
