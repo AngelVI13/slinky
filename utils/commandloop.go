@@ -19,7 +19,7 @@ func runEngine(pos *board.ChessBoard, info *board.SearchInfo, moveTime int) (gam
 		}
 
 		// board.SearchPosition(pos, info)
-		engineMove, _, _ := uct.GetEngineMoveFast(pos, info)
+		engineMove, _, _, _ := uct.GetEngineMoveFast(pos, info, &uct.Node{})
 		fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
 		pos.MakeMove(engineMove)
 		fmt.Println(pos)

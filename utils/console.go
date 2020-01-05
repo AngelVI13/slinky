@@ -22,6 +22,8 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 	move := board.NoMove
 	playout := false // forces engine to play until game is over
 
+	var moveNode *uct.Node
+
 	// engineSide = board.Black
 	pos.ParseFen(board.StartFen)
 
@@ -37,7 +39,9 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 			}
 
 			// board.SearchPosition(pos, info)
-			engineMove, _, _ := uct.GetEngineMoveFast(pos, info)
+			var engineMove int
+			engineMove, _, _, moveNode = uct.GetEngineMoveFast(pos, info, moveNode)
+			fmt.Println(moveNode)
 			fmt.Printf("Engine move is %s\n", board.PrintMove(engineMove))
 			pos.MakeMove(engineMove)
 			fmt.Println(pos)
@@ -78,6 +82,7 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 			startStr := "setboard "
 			fen := board.RemoveStringToTheLeftOfMarker(command, startStr)
 			pos.ParseFen(fen)
+			moveNode = &uct.Node{}
 			continue
 		}
 
@@ -151,6 +156,7 @@ func ConsoleLoop(pos *board.ChessBoard, info *board.SearchInfo) {
 		if strings.Contains(command, "new") {
 			engineSide = board.Black
 			pos.ParseFen(board.StartFen)
+			moveNode = &uct.Node{}
 			continue
 		}
 

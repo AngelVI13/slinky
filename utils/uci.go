@@ -108,7 +108,7 @@ func SearchPosition(pos *board.ChessBoard, info *board.SearchInfo) int {
 	// do normal move search
 	bestScore := 0.0
 	nodes := 0
-	bestMove, bestScore, nodes = uct.GetEngineMoveFast(pos, info)
+	bestMove, bestScore, nodes, _ = uct.GetEngineMoveFast(pos, info, &uct.Node{})
 
 	// scale from percentage to centipawn loss/gain
 	// here is bestScore from point of view of enemy ?

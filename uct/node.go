@@ -80,8 +80,8 @@ func (n *Node) SelectChild() *Node {
 }
 
 // CreateRootNode creates a root node for a given board state
-func CreateRootNode(state *board.ChessBoard) Node {
-	return Node{
+func CreateRootNode(state *board.ChessBoard) *Node {
+	return &Node{
 		move:            -1, // this is set to an invalid move
 		parent:          nil,
 		untriedMoves:    state.GetMoves(),

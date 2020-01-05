@@ -11,17 +11,18 @@ import (
 type rankedMove struct {
 	move  int
 	score float64
+	node  *Node
 }
 
 type uctResult struct {
-	state            *board.ChessBoard
+	node             *Node
 	move             int
 	wins             float64
 	visits           float64
 	totalSimulations int
 }
 
-func uct(rootstate *board.ChessBoard, originMove int, timeData timeInfo) uctResult {
+func uct(rootstate *board.ChessBoard, node *Node, originMove int, timeData timeInfo) uctResult {
 	rootstate.MakeMove(originMove)
 	/* Check for immediate result
 	It is possible the game is already over by this point
@@ -33,7 +34,18 @@ func uct(rootstate *board.ChessBoard, originMove int, timeData timeInfo) uctResu
 		return result
 	}
 
-	rootnode := CreateRootNode(rootstate)
+	var rootnode *Node
+	if node != nil {
+		if node.move <= 0 {
+			rootnode = CreateRootNode(rootstate)
+		} else {
+			fmt.Printf("Reusing node tree: move %s visits %f wins %f\n", board.PrintMove(node.move), node.visits, node.wins)
+			rootnode = node
+		}
+	} else {
+		rootnode = CreateRootNode(rootstate)
+	}
+
 	state := rootstate
 
 	simulations := 0
@@ -41,7 +53,7 @@ func uct(rootstate *board.ChessBoard, originMove int, timeData timeInfo) uctResu
 	elapsedTime := time.Since(timeData.startTime).Seconds() * 1000 // get elapsed time in ms
 	for timeData.isTimeSet == true && elapsedTime < float64(timeData.stopTime) {
 		simulations++ // count number of simulations done
-		node := &rootnode
+		node := rootnode
 		movesToRoot := 0
 
 		// Select stage
@@ -98,7 +110,8 @@ func uct(rootstate *board.ChessBoard, originMove int, timeData timeInfo) uctResu
 	})
 	// above we sort by descending order -> move with most visits is the first element
 	bestMove := rootnode.childNodes[0]
-	return uctResult{state: state, move: originMove, wins: bestMove.wins, visits: bestMove.visits, totalSimulations: simulations}
+	// todo not needed to send the rest of the items back since they are all inside bestMove
+	return uctResult{node: bestMove, move: originMove, wins: bestMove.wins, visits: bestMove.visits, totalSimulations: simulations}
 }
 
 type timeInfo struct {
@@ -109,19 +122,21 @@ type timeInfo struct {
 
 type uctArg struct {
 	state    *board.ChessBoard
+	node     *Node
 	move     int
 	timeData timeInfo
 }
 
 func worker(jobs <-chan uctArg, results chan<- uctResult) {
 	for uctArguments := range jobs {
-		results <- uct(uctArguments.state, uctArguments.move, uctArguments.timeData)
+		results <- uct(uctArguments.state, uctArguments.node, uctArguments.move, uctArguments.timeData)
 	}
 }
 
-// todo need to return pointer to state!!!
 // GetEngineMoveFast returns the best move found by the UCT (computed in parallel)
-func GetEngineMoveFast(state *board.ChessBoard, info *board.SearchInfo) (move int, score float64, totalSim int) {
+// todo return Struct instead of a lot of individual vars
+func GetEngineMoveFast(state *board.ChessBoard, info *board.SearchInfo, node *Node) (move int, score float64, totalSim int, moveNode *Node) {
+	// todo this could use the values from Node instead of asking for moves again
 	availableMoves := state.GetMoves()
 	numMoves := len(availableMoves)
 
@@ -129,7 +144,7 @@ func GetEngineMoveFast(state *board.ChessBoard, info *board.SearchInfo) (move in
 		panic("Game is already over, can't get engine move for a finished game!")
 	} else if numMoves == 1 {
 		// no clue what the score is here since we haven't actually searched the move
-		return availableMoves[0], 0.5, 0
+		return availableMoves[0], 0.5, 0, &Node{}
 	}
 
 	// todo return whole node from mcts and then send it down on the jobs for the next run
@@ -147,13 +162,36 @@ func GetEngineMoveFast(state *board.ChessBoard, info *board.SearchInfo) (move in
 
 	timeData := timeInfo{startTime: info.StartTime, stopTime: info.StopTime, isTimeSet: info.TimeSet}
 	bestMove := rankedMove{move: -1, score: 1.1}
+	// if we have a valid node tree provided -> enter last user move and make that node root
+	if node != nil {
+		if node.move != 0 {
+			for _, child := range node.childNodes {
+				if child.move == state.GetLastMove() {
+					node = child
+					break
+				}
+			}
+		}
+	}
 
 	for _, move := range availableMoves {
 		// create a copy of the board in order to be sent to the goroutine
 		b := *state
 
+		var childNode *Node
+		if node != nil {
+			for _, child := range node.childNodes {
+				if child.move == move {
+					childNode = child
+					childNode.parent = nil
+					break
+				}
+			}
+		}
+
 		jobs <- uctArg{
 			state:    &b,
+			node:     childNode,
 			move:     move,
 			timeData: timeData,
 		}
@@ -176,12 +214,13 @@ func GetEngineMoveFast(state *board.ChessBoard, info *board.SearchInfo) (move in
 		if scoreValue < bestMove.score {
 			bestMove.score = scoreValue
 			bestMove.move = result.move
+			bestMove.node = result.node
 		}
 		totalSimulations += result.totalSimulations
 	}
 	fmt.Printf("Total simulations done: %d\n", totalSimulations)
 
-	return bestMove.move, bestMove.score, totalSimulations
+	return bestMove.move, bestMove.score, totalSimulations, bestMove.node
 }
 
 func isImmediateResult(state *board.ChessBoard, move int) (isResult bool, result uctResult) {
@@ -189,7 +228,7 @@ func isImmediateResult(state *board.ChessBoard, move int) (isResult bool, result
 	gameResult := state.GetResult(enemy)
 
 	if gameResult != board.NoWinner {
-		result = uctResult{state: state, move: move, wins: float64(gameResult), visits: 1.0}
+		result = uctResult{node: &Node{}, move: move, wins: float64(gameResult), visits: 1.0}
 		isResult = true
 	}
 

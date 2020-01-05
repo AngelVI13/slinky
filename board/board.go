@@ -192,6 +192,14 @@ func (pos *ChessBoard) String() string {
 	return line
 }
 
+// GetLastMove returns the last made move if any was made, otherwise NoMove
+func (pos *ChessBoard) GetLastMove() int {
+	if pos.histPly <= 0 {
+		return NoMove
+	}
+	return pos.history[pos.histPly-1].move
+}
+
 // GetThreeFoldRepetitionCount Detects how many repetitions for a given position
 func (pos *ChessBoard) GetThreeFoldRepetitionCount() int {
 	r := 0
